@@ -1,1 +1,5 @@
-# package definition, do not remove.
+# module definition, do not delete
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
