@@ -1,4 +1,4 @@
-from src.app.__init__ import db
+from . import db
 from datetime import datetime, timezone
 
 class Relation(db.Model):
@@ -8,7 +8,7 @@ class Relation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     from_profile_id = db.Column(db.Integer, db.ForeignKey('profiles.id'), nullable=False)
     to_profile_id = db.Column(db.Integer, db.ForeignKey('profiles.id'), nullable=False)
-    status = db.Column(int, default='pending')  # pending, accepted, blocked
+    status = db.Column(db.Integer, default='pending')  # pending, accepted, blocked
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     __table_args__ = (

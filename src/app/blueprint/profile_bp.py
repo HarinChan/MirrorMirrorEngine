@@ -6,10 +6,10 @@ and automatic bidirectional connections between profiles.
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from src.app.main import db
-from src.app.model.account import Account
-from src.app.helper import PenpalsHelper
-from src.app.chromadb.chromadb_service import ChromaDBService
+from ..model import db
+from ..model.account import Account
+from ..helper import PenpalsHelper
+from ..chromadb.chromadb_service import ChromaDBService
 
 
 profile_bp = Blueprint('profile', __name__)

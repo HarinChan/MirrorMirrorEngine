@@ -1,4 +1,4 @@
-from src.app.__init__ import db
+from . import db
 from datetime import datetime, timezone
 
 class Post(db.Model):

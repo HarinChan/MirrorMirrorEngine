@@ -1,4 +1,4 @@
-from src.app.__init__ import db
+from . import db
 
 class Profile(db.Model):
     __tablename__ = 'profiles'
@@ -13,7 +13,7 @@ class Profile(db.Model):
     size = db.Column(db.Integer, nullable=True)
     availability = db.Column(db.JSON, nullable=True)  # Store as JSON array
     interests = db.Column(db.JSON, nullable=True)  # Store as JSON array
-    metadata = db.Column(db.JSON, nullable=True)  # Additional data for generize whatever Store as JSON array
+    profile_metadata = db.Column(db.JSON, nullable=True)  # Additional data for generize whatever Store as JSON array
     
     # Relationships
     sent_relations = db.relationship('Relation', foreign_keys='Relation.from_profile_id', 
