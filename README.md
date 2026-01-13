@@ -16,3 +16,9 @@ Testcases should be put in `/src/test` and should be structured accordingly to `
 
 Running the app in dev mode in root directory:
 ```uvicorn src.app.main:app --reload```
+
+
+## Deploy on Azure
+
+## Api end points
+ `account
