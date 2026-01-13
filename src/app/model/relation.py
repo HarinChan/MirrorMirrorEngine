@@ -1,6 +1,7 @@
 from . import db
 from datetime import datetime, timezone
 
+
 class Relation(db.Model):
     """Profile-to-Profile connections (friendships/connections)"""
     __tablename__ = 'relations'
