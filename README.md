@@ -12,6 +12,10 @@ Testcases should be put in `/src/test` and should be structured accordingly to `
 
 Running the app in dev mode in root directory:
 ```uvicorn src.app.main:app --reload```
+# Model Notes
+Each entity also has a "metadata" value to package any derivitive / interpretation of the class.
+e.g. profile -> classroom, adding grades, age, etc.
+Model should be made generalized.
 
 # dto
 For any get request, dto should be use exclusively.
