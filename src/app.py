@@ -7,6 +7,7 @@ Simple wrapper around main.py for deployment and production use.
 import os
 import sys
 from app.helper import PenpalsHelper
+from app.main import application
 
 def find_available_port():
     """Find an available port for the application"""
@@ -18,8 +19,6 @@ def find_available_port():
 
 def main():
     """Main application entry point"""
-    # Import the Flask application
-    from app.main import application
     
     # Determine port
     port = int(os.environ.get('PORT', find_available_port()))
