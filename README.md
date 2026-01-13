@@ -19,3 +19,6 @@ For any get request, dto should be use exclusively.
 ## Deploy on Azure
 
 ## Api end points
+
+# ChromaDb service
+Profile and post use chroma db service to optimize search and do matching.  
