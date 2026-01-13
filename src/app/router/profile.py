@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from src.app.__init__ import db, app
+from src.app.main import db, app
 from src.app.model.profile import Profile
 from src.app.model.account import Account
 from src.app.model.post import Post
@@ -14,7 +14,7 @@ def add_profile():
         account_id=data['account_id'],
         name=data['name'],
         location=data.get('location'),
-        lattitude=data.get('lattitude'),
+        latitude=data.get('latitude'),
         longitude=data.get('longitude'),
         size=data.get('size'),
         availability=data.get('availability'),
@@ -34,7 +34,7 @@ def get_profile(id):
         "account_id": profile.account_id,
         "name": profile.name,
         "location": profile.location,
-        "lattitude": profile.lattitude,
+        "latitude": profile.latitude,
         "longitude": profile.longitude,
         "size": profile.size,
         "availability": profile.availability,
@@ -50,7 +50,7 @@ def edit_profile(id):
 
     profile.name = data.get('name', profile.name)
     profile.location = data.get('location', profile.location)
-    profile.lattitude = data.get('lattitude', profile.lattitude)
+    profile.latitude = data.get('latitude', profile.latitude)
     profile.longitude = data.get('longitude', profile.longitude)
     profile.size = data.get('size', profile.size)
     profile.availability = data.get('availability', profile.availability)

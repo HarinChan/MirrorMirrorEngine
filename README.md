@@ -19,3 +19,6 @@ For any get request, dto should be use exclusively.
 ## Deploy on Azure
 
 ## Api end points
+
+# Run
+Run `python src\app\main.py`

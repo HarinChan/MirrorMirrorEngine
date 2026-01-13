@@ -1,5 +1,6 @@
-from src.app.__init__ import db
+from src.app.main import db
 from datetime import datetime, timezone
+
 
 class Relation(db.Model):
     """Profile-to-Profile connections (friendships/connections)"""

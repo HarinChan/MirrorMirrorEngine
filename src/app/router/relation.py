@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from src.app.__init__ import db, app
+from src.app.main import db, app
 from src.app.model.profile import Profile
 from src.app.model.account import Account
 from src.app.model.post import Post
