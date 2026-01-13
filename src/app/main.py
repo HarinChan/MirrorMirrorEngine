@@ -63,7 +63,7 @@ with application.app_context():
     db.create_all()
     print("Database initialized successfully!")
 
-# register blue prints?
+# register blue prints for API endpoints
 application.register_blueprint(account_bp)
 application.register_blueprint(profile_bp)
 
