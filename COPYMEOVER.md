@@ -1,0 +1,11 @@
+## Copy from Penpals.Backend checklist
+- [x] account.py (copied under `blueprint/account.py`)
+- [x] app.py (raw)
+- [x] chromadb_service.py (copied under `chromadb/chromadb_service.py`)
+- [x] classroom.py (copied under `blueprint/classroom.py`)
+- [ ] engine_handler.py (do not need to copy, usage not needed)
+- [ ] find_open_port.py (do not need to copy, unused)
+- [ ] init_db.py (do not need to copy, unsused)
+- [x] main.py (raw)
+- [x] model.py (copied under `model/*` split into different classes)
+- [x] penpals_helper.py (as `helper`)
