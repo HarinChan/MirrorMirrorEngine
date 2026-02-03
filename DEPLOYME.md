@@ -22,8 +22,11 @@ Required python libraries:
 - [x] 1.3
 - [x] 1.4
 - [x] 1.5
-- [x] 1.6
-- [ ] 2.0
+- [x] 1.6 monitor registration using `az provider show -n Microsoft.KeyVault`
+- [x] 2.0
+
+- [ ] 3.1
+
 
 #### Constants
 ###### Unique to HarinChan / Console output:
@@ -38,17 +41,18 @@ echo $env:AZURE_TENANT_ID=$(az account show --query tenantId --output tsv)
 echo $env:AZURE_DEVCENTER_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/devcenters/MirrorMirrorDevCenter"
 echo $env:AZURE_DEVCENTER_PRINCIPAL_ID="c5767dca-bb5c-4807-8813-513727eb1a16"
 echo $env:AZURE_PROJECT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/projects/MirrorMirrorEngineProject"
+echo $env:AZURE_KEYVAULT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.KeyVault/vaults/MirrorMirrorKeyVault"
 
 ```
 az keyvault create --name $env:AZURE_KEYVAULT --resource-group $env:AZURE_RESOURCE_GROUP --location $env:LOCATION --enable-rbac-authorization true
 ```
 
-###### General Constant:
+###### Manual Constant:
 echo $env:LOCATION="uksouth"
 echo $env:AZURE_RESOURCE_GROUP="MirrorMirrorEngineResourceGroup"
 echo $env:AZURE_DEVCENTER="MirrorMirrorDevCenter"
 echo $env:AZURE_PROJECT="MirrorMirrorEngineProject"
-echo $env:AZURE_KEYVAULT="MirrorMirrorEngineKeyVault"
+echo $env:AZURE_KEYVAULT="MirrorMirrorKeyVault"
 
 ```az devcenter admin project create --name $env:AZURE_PROJECT --resource-group $env:AZURE_RESOURCE_GROUP --location $env:LOCATION --dev-center-id $env:AZURE_DEVCENTER_ID```
 ## Deploy on Azure 1
