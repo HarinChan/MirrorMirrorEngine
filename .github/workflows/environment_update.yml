@@ -110,7 +110,7 @@ jobs:
 
       - name: Deploy Flask App # [flask]
         run: |
-          az functionapp deployment source config-zip --name ${{ env.ENVIRONMENT_NAME }} --src flask_project.zip \
+          az functionapp deployment source config-zip --name ${{ env.ENVIRONMENT_NAME }} --src publish.zip \
               --subscription ${{ env.ENVIRONMENT_SUB }} --resource-group ${{ env.ENVIRONMENT_GROUP }}
 
           echo "- [View the deployed API](https://${{ env.ENVIRONMENT_NAME }}.azurewebsites.net/api)" >> $GITHUB_STEP_SUMMARY
