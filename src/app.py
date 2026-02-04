@@ -9,6 +9,8 @@ import sys
 from app.helper import PenpalsHelper
 from app.main import application
 
+
+
 def find_available_port():
     """Find an available port for the application"""
     port = PenpalsHelper.find_open_port(5000, 6000)

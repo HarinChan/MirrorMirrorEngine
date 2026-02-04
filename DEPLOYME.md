@@ -25,7 +25,29 @@ Required python libraries:
 - [x] 1.6 monitor registration using `az provider show -n Microsoft.KeyVault`
 - [x] 2.0
 
-- [ ] 3.1
+- [x] 3.1
+- [x] 3.2
+- [x] 3.3
+- [x] 3.4
+- [x] 3.5
+
+- [x] Update Environments to match python flask
+> - [x] Update `FunctionApp`
+> - [x] Update `SandBox`
+- [ ] Update .github workflow to match python flask
+> - [x] Check `bicep_arm.yml`
+> - [x] Check `environment_config.yml`
+> - [ ] Update `environment_create.yml`
+> - [x] Check `environment_delete.yml`
+> - [ ] Update `environment_update.yml`
+
+- [ ] 4.0
+- [ ] 4.1
+
+
+```azure
+az devcenter admin catalog create --name Environments --resource-group $env:AZURE_RESOURCE_GROUP --dev-center $env:AZURE_DEVCENTER --git-hub path="/Environments" branch="main" secret-identifier="https://$env:AZURE_KEYVAULT.vault.azure.net/secrets/pat" uri="https://github.com/HarinChan/MirrorMirrorEngine.git"
+```
 
 
 #### Constants
@@ -42,6 +64,9 @@ echo $env:AZURE_DEVCENTER_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b3666
 echo $env:AZURE_DEVCENTER_PRINCIPAL_ID="c5767dca-bb5c-4807-8813-513727eb1a16"
 echo $env:AZURE_PROJECT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/projects/MirrorMirrorEngineProject"
 echo $env:AZURE_KEYVAULT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.KeyVault/vaults/MirrorMirrorKeyVault"
+
+$env:DEV_AZURE_CLIENT_ID=<appId>
+$env:DEV_APPLICATION_ID=<id>
 
 ```
 az keyvault create --name $env:AZURE_KEYVAULT --resource-group $env:AZURE_RESOURCE_GROUP --location $env:LOCATION --enable-rbac-authorization true
