@@ -48,12 +48,7 @@ jobs:
       
       - name: Package Flask App # [flask]
         run: |
-          # Create a directory for the publish output
-          mkdir publish
-          cp -r * publish/
-          cp -r .* publish/
-          rm -rf publish/.git
-          zip -r publish.zip publish/*
+          zip -r publish.zip . -x "*.git*"
 
       # - name: Build ADE.Tutorial  # [.NET]
       #   run: dotnet publish ./ADE.Tutorial -c Release -o ./publish && (cd ./publish && zip -r ../publish.zip .)

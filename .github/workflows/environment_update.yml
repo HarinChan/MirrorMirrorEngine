@@ -56,12 +56,7 @@ jobs:
       
       - name: Package Flask App # [flask]
         run: |
-          # Create a directory for the publish output
-          mkdir publish
-          cp -r * publish/
-          cp -r .* publish/
-          rm -rf publish/.git
-          zip -r publish.zip publish/*
+          zip -r publish.zip . -x "*.git*"
 
       - name: Install DevCenter CLI Extension
         run: az extension add --name devcenter --upgrade
