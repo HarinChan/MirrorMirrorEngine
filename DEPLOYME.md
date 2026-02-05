@@ -14,6 +14,8 @@ Required python libraries:
 > To view past images, run `docker images`
 > Running the image `docker run -p 5000:5000 mirror_mirror_engine`
 
+## Deploy on Azure 3
+
 ## Deploy on Azure 2
 [CI/CD Turtorial](https://learn.microsoft.com/en-us/azure/deployment-environments/tutorial-deploy-environments-in-cicd-github)
 
