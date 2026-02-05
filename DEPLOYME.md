@@ -34,81 +34,110 @@ Required python libraries:
 - [x] Update Environments to match python flask
 > - [x] Update `FunctionApp`
 > - [x] Update `SandBox`
-- [ ] Update .github workflow to match python flask
+- [x] Update .github workflow to match python flask
 > - [x] Check `bicep_arm.yml`
 > - [x] Check `environment_config.yml`
-> - [ ] Update `environment_create.yml`
+> - [x] Update `environment_create.yml`
 > - [x] Check `environment_delete.yml`
-> - [ ] Update `environment_update.yml`
+> - [x] Update `environment_update.yml`
 
-- [ ] 4.0
-- [ ] 4.1
+- [x] 4.0
+- [x] 5.1
+- [x] 5.2
 
 
-```azure
+
+```powershell
 az devcenter admin catalog create --name Environments --resource-group $env:AZURE_RESOURCE_GROUP --dev-center $env:AZURE_DEVCENTER --git-hub path="/Environments" branch="main" secret-identifier="https://$env:AZURE_KEYVAULT.vault.azure.net/secrets/pat" uri="https://github.com/HarinChan/MirrorMirrorEngine.git"
+
+az devcenter catalog list --dev-center $env:AZURE_DEVCENTER --project $env:AZURE_PROJECT --output table
+
+az devcenter admin catalog list --dev-center-name $env:AZURE_DEVCENTER --resource-group $env:AZURE_RESOURCE_GROUP --max-items --next-token
+
+az devcenter admin catalog show --catalog-name Environments --dev-center $env:AZURE_DEVCENTER --resource-group $env:AZURE_RESOURCE_GROUP
 ```
 
+```json
+[
+  {
+    "connectionState": "Connected",
+    "gitHub": {
+      "branch": "main",
+      "path": "/Environments",
+      "secretIdentifier": "https://MirrorMirrorKeyVault.vault.azure.net/secrets/pat",
+      "uri": "https://github.com/HarinChan/MirrorMirrorEngine.git"
+    },
+
+    "id": "/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/devcenters/MirrorMirrorDevCenter/catalogs/Environments",
+    "lastConnectionTime": "2026-02-04T22:00:15.7312418Z",
+    "lastSyncStats": {
+      "added": 2,
+      "removed": 0,
+      "syncedCatalogItemTypes": [
+        "EnvironmentDefinition",
+        "ImageDefinition",
+        "DataPlatformFile"
+      ],
+      "synchronizationErrors": 0,
+      "unchanged": 0,
+      "updated": 0,
+      "validationErrors": 0
+    },
+    "lastSyncTime": "2026-02-04T22:00:51.222878Z",
+    "name": "Environments",
+    "provisioningState": "Succeeded",
+    "resourceGroup": "MirrorMirrorEngineResourceGroup",
+    "syncState": "Succeeded",
+    "systemData": {
+      "createdAt": "2026-02-04T21:25:02.2984765Z",
+      "createdBy": "zcabyht@ucl.ac.uk",
+      "createdByType": "User",
+      "lastModifiedAt": "2026-02-04T21:59:57.8118185Z",
+      "lastModifiedBy": "zcabyht@ucl.ac.uk",
+      "lastModifiedByType": "User"
+    },
+    "type": "microsoft.devcenter/devcenters/catalogs"
+  }
+]
+```
 
 #### Constants
 ###### Unique to HarinChan / Console output:
-echo $env:MY_AZURE_ID=`950826f0-bc3f-49c8-817b-0bc9b613d189`
-echo $env:AZURE_SUBSCRIPTION_ID=`d4e2aa96-9aef-4cca-90b7-cf5f71b36665`
-echo $env:AZURE_TENANT_ID=`1faf88fe-a998-4c5b-93c9-210a11d9a5c2`
+$env:MY_AZURE_ID="950826f0-bc3f-49c8-817b-0bc9b613d189"
+$env:AZURE_SUBSCRIPTION_ID="d4e2aa96-9aef-4cca-90b7-cf5f71b36665"
+$env:AZURE_TENANT_ID="1faf88fe-a998-4c5b-93c9-210a11d9a5c2"
 or
-echo $env:MY_AZURE_ID=$(az ad signed-in-user show --query id -o tsv)
-echo $env:AZURE_SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-echo $env:AZURE_TENANT_ID=$(az account show --query tenantId --output tsv)
+$env:MY_AZURE_ID=$(az ad signed-in-user show --query id -o tsv)
+$env:AZURE_SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+$env:AZURE_TENANT_ID=$(az account show --query tenantId --output tsv)
 
-echo $env:AZURE_DEVCENTER_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/devcenters/MirrorMirrorDevCenter"
-echo $env:AZURE_DEVCENTER_PRINCIPAL_ID="c5767dca-bb5c-4807-8813-513727eb1a16"
-echo $env:AZURE_PROJECT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/projects/MirrorMirrorEngineProject"
-echo $env:AZURE_KEYVAULT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.KeyVault/vaults/MirrorMirrorKeyVault"
+$env:AZURE_DEVCENTER_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/devcenters/MirrorMirrorDevCenter"
+$env:AZURE_DEVCENTER_PRINCIPAL_ID="c5767dca-bb5c-4807-8813-513727eb1a16"
+$env:AZURE_PROJECT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/projects/MirrorMirrorEngineProject"
+$env:AZURE_KEYVAULT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.KeyVault/vaults/MirrorMirrorKeyVault"
 
-$env:DEV_AZURE_CLIENT_ID=<appId>
-$env:DEV_APPLICATION_ID=<id>
+$env:DEV_AZURE_CLIENT_ID="32741620-abde-4dfe-82e8-9bf96489baa8"
+$env:DEV_APPLICATION_ID="0e369113-75aa-4436-befa-ab0d9c4439dc"
 
-```
-az keyvault create --name $env:AZURE_KEYVAULT --resource-group $env:AZURE_RESOURCE_GROUP --location $env:LOCATION --enable-rbac-authorization true
-```
+$env:TEST_AZURE_CLIENT_ID="571e952e-8534-4d82-93ff-c33a0d2232d4"
+$env:TEST_APPLICATION_ID="548e8297-155d-4707-aa82-4b6cdefb494b"
+
+$env:PROD_AZURE_CLIENT_ID="f3d71bb9-4615-4f22-8c8b-7c7de7add9b9"
+$env:PROD_APPLICATION_ID="feca61d5-0255-45b7-837e-5625526d20a0"
+
+$env:DEV_SERVICE_PRINCIPAL_ID="2aac7ab4-b41a-42a6-aa4d-6c254a1a57bf"
+$env:TEST_SERVICE_PRINCIPAL_ID="49ef5950-83d3-4944-a193-1e39ef8fe447"
+$env:PROD_SERVICE_PRINCIPAL_ID="9b0d4806-b31d-4388-bef1-0a68a68bea5b"
 
 ###### Manual Constant:
-echo $env:LOCATION="uksouth"
-echo $env:AZURE_RESOURCE_GROUP="MirrorMirrorEngineResourceGroup"
-echo $env:AZURE_DEVCENTER="MirrorMirrorDevCenter"
-echo $env:AZURE_PROJECT="MirrorMirrorEngineProject"
-echo $env:AZURE_KEYVAULT="MirrorMirrorKeyVault"
+$env:LOCATION="uksouth"
+$env:AZURE_RESOURCE_GROUP="MirrorMirrorEngineResourceGroup"
+$env:AZURE_DEVCENTER="MirrorMirrorDevCenter"
+$env:AZURE_PROJECT="MirrorMirrorEngineProject"
+$env:AZURE_KEYVAULT="MirrorMirrorKeyVault"
 
-```az devcenter admin project create --name $env:AZURE_PROJECT --resource-group $env:AZURE_RESOURCE_GROUP --location $env:LOCATION --dev-center-id $env:AZURE_DEVCENTER_ID```
-## Deploy on Azure 1
+```powershell
+$env:environment_rg=$(az devcenter dev environment show --name $env:ENVIRONMENT_NAME --dev-center $env:AZURE_DEVCENTER --project $env:AZURE_PROJECT --only-show-errors --query resourceGroupId --output tsv 2>&1)
 
-Device set up:
-- Install Azure CLI via `https://learn.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest`
-
-Constants: (replace all instance below when altered)
-- Resource Group: `MirrorMirrorEngineResourceGroup`
-- App service plan: `mirrorMirrorEngineServicePlan`
-- API name: `mirrorMirrorEnginePython`
-- ACR name: `mirrormirroracr`
-- Image Name: `mirror_mirror_engine`
-
-#### Initial Steps. (should be completed on the website)
-1. login to Azure `az login`
-2. create resources group `az group create --name MirrorMirrorEngineResourceGroup --location uksouth`
-3. Move on to A or B
-
-#### A. Deploy from Github
-1. create app service plan `az appservice plan create --name mirrorMirrorEngineServicePlan --resource-group DefaultResourceGroup-SUK --sku B1 --is-linux`
-2. create webapp `az webapp create --resource-group MirrorMirrorEngineResourceGroup --plan mirrorMirrorEngineServicePlan --name mirrorMirrorEnginePython --runtime "PYTHON|3.8"`
-3. navigate to project root, add remote group repository `az webapp deployment source config-local-git --name mirrorMirrorEnginePython --resource-group MirrorMirrorEngineResourceGroup`
-4. deploy `git remote add azure <Your-Git-Remote-URL>`
-
-#### B. Deploy from Docker
-1. create acr `az acr create --resource-group MirrorMirrorEngineResourceGroup --name mirrormirroracr --sku Basic`
-2. login to acr `az acr login --name mirrormirroracr`
-3. push image `docker push mirrormirroracr.azurecr.io/mirror_mirror_engine:latest`
-
-#### Result
-
-Endpoint will be available at `http://<your-app-name>.azurewebsites.net` (app name dependant on)
+$env:environment_rg=$(az devcenter dev environment create --name $env:ENVIRONMENT_NAME --environment-type $env:ENVIRONMENT_TYPE --dev-center $env:AZURE_DEVCENTER --project $env:AZURE_PROJECT --catalog-name $env:AZURE_CATALOG --environment-definition-name $env:AZURE_CATALOG_ITEM --parameters '{ \"name\": \"$env:ENVIRONMENT_NAME\" }' --only-show-errors --query resourceGroupId --output tsv 2>&1)
 
