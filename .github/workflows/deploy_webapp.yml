@@ -61,11 +61,11 @@ jobs:
           name: python-app
       
       - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          az login --service-principal \
+            --username ${{ vars.WEBAPP_CLIENT_ID }} \
+            --password ${{ secrets.WEBAPP_CLIENT_SECRET }} \
+            --tenant ${{ vars.AZURE_TENANT_ID }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3

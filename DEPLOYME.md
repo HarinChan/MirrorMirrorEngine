@@ -11,6 +11,35 @@ Python Version: 3.14
 ## Deploy on Azure 3 - Webapp
 yeah, this is much simpler.
 
+#### Constants
+```powershell
+$env:MY_AZURE_ID=$(az ad signed-in-user show --query id -o tsv)
+$env:AZURE_SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+$env:AZURE_TENANT_ID=$(az account show --query tenantId --output tsv)
+
+$env:MY_AZURE_ID="950826f0-bc3f-49c8-817b-0bc9b613d189"
+$env:AZURE_SUBSCRIPTION_ID="d4e2aa96-9aef-4cca-90b7-cf5f71b36665"
+$env:AZURE_TENANT_ID="1faf88fe-a998-4c5b-93c9-210a11d9a5c2"
+
+$env:LOCATION="uksouth"
+$env:AZURE_RESOURCE_GROUP="MirrorMirrorEngineResourceGroup"
+$env:WEBAPP_NAME="MirrorMirrorWebApp"
+
+$env:WEBAPP_CLIENT_ID="81d9b8b6-cadb-4cdd-8ac8-d5e131d21fd2"
+
+$env:WEBAPP_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.Web/sites/MirrorMirrorWebApp"
+```
+
+```powershell
+az login --service-principal --username $env:WEBAPP_CLIENT_ID --password $env:WEBAPP_CLIENT_SECRET --tenant $env:AZURE_TENANT_ID
+
+az login --service-principal --subscription $env:AZURE_SUBSCRIPTION_ID --client $env:WEBAPP_CLIENT_ID --tenant $env:AZURE_TENANT_ID
+
+az role assignment create --assignee <SERVICE_PRINCIPAL_APP_ID> --role Contributor --scope /subscriptions/$env:AZURE_SUBSCRIPTION_ID
+
+az role assignment create --assignee $env:WEBAPP_CLIENT_ID --role Contributor --scope /subscriptions/$env:AZURE_SUBSCRIPTION_ID
+```
+
 ## Deploy on Azure 2 - Function App
 [CI/CD Turtorial](https://learn.microsoft.com/en-us/azure/deployment-environments/tutorial-deploy-environments-in-cicd-github)
 
@@ -64,8 +93,8 @@ echo $env:AZURE_DEVCENTER_PRINCIPAL_ID="c5767dca-bb5c-4807-8813-513727eb1a16"
 echo $env:AZURE_PROJECT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.DevCenter/projects/MirrorMirrorEngineProject"
 echo $env:AZURE_KEYVAULT_ID="/subscriptions/d4e2aa96-9aef-4cca-90b7-cf5f71b36665/resourceGroups/MirrorMirrorEngineResourceGroup/providers/Microsoft.KeyVault/vaults/MirrorMirrorKeyVault"
 
-$env:DEV_AZURE_CLIENT_ID=<appId>
-$env:DEV_APPLICATION_ID=<id>
+
+
 
 ```
 az keyvault create --name $env:AZURE_KEYVAULT --resource-group $env:AZURE_RESOURCE_GROUP --location $env:LOCATION --enable-rbac-authorization true

@@ -9,10 +9,20 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
     - name: Check out the code
       uses: actions/checkout@v2
+
+    - name: Azure CLI Login Test
+      run: |
+        az login --service-principal \
+          --username ${{ vars.WEBAPP_CLIENT_ID }} \
+          --password ${{ secrets.WEBAPP_CLIENT_SECRET }} \
+          --tenant ${{ vars.AZURE_TENANT_ID }}
 
     - name: Set up Python
       uses: actions/setup-python@v2

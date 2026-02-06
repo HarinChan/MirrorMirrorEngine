@@ -231,3 +231,5 @@ publish.zip
 # more db
 ./chroma_db/*
 ./penapls_db/*
+
+secrets.txt
