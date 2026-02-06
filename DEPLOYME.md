@@ -45,8 +45,10 @@ Required python libraries:
 - [ ] 4.1
 
 
-```azure
+```powershell
 az devcenter admin catalog create --name Environments --resource-group $env:AZURE_RESOURCE_GROUP --dev-center $env:AZURE_DEVCENTER --git-hub path="/Environments" branch="main" secret-identifier="https://$env:AZURE_KEYVAULT.vault.azure.net/secrets/pat" uri="https://github.com/HarinChan/MirrorMirrorEngine.git"
+
+az functionapp deployment source config-zip --name ci-branch-main-1095874243 --src publish.zip --subscription d4e2aa96-9aef-4cca-90b7-cf5f71b36665 --resource-group mirrormirrorengineproject-ci-branch-main-1095874243
 ```
 
 
