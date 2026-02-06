@@ -14,6 +14,13 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v2
 
+    - name: Az CLI login Test
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.WEBAPP_CLIENT_ID }}
+        tenant-id: ${{ vars.AZURE_TENANT_ID }}
+        subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
