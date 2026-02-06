@@ -1,20 +1,17 @@
 ## Development Notes
 
-Python Version: 3.13
+Python Version: 3.14
 
-Required python libraries:
-- `fastapi`
-- `uvicorn`
-- `sqlalchemy`
-- `database`
-
-## Docker Notes
+## Docker Notes (not even required)
 
 > To build image, run `docker build -t mirror_mirror_engine .`
 > To view past images, run `docker images`
 > Running the image `docker run -p 5000:5000 mirror_mirror_engine`
 
-## Deploy on Azure 2
+## Deploy on Azure 3 - Webapp
+yeah, this is much simpler.
+
+## Deploy on Azure 2 - Function App
 [CI/CD Turtorial](https://learn.microsoft.com/en-us/azure/deployment-environments/tutorial-deploy-environments-in-cicd-github)
 
 - [x] 1.1 monitor registration using `az provider show -n Microsoft.DevCenter`
@@ -45,8 +42,10 @@ Required python libraries:
 - [ ] 4.1
 
 
-```azure
+```powershell
 az devcenter admin catalog create --name Environments --resource-group $env:AZURE_RESOURCE_GROUP --dev-center $env:AZURE_DEVCENTER --git-hub path="/Environments" branch="main" secret-identifier="https://$env:AZURE_KEYVAULT.vault.azure.net/secrets/pat" uri="https://github.com/HarinChan/MirrorMirrorEngine.git"
+
+az functionapp deployment source config-zip --name ci-branch-main-1095874243 --src publish.zip --subscription d4e2aa96-9aef-4cca-90b7-cf5f71b36665 --resource-group mirrormirrorengineproject-ci-branch-main-1095874243
 ```
 
 

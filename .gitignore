@@ -227,3 +227,7 @@ __marimo__/
 # publish
 publish/*
 publish.zip
+
+# more db
+./chroma_db/*
+./penapls_db/*
