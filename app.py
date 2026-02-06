@@ -6,8 +6,8 @@ Simple wrapper around main.py for deployment and production use.
 
 import os
 import sys
-from app.helper import PenpalsHelper
-from app.main import application
+from src.app.helper import PenpalsHelper
+from src.app.main import application
 
 
 
@@ -19,7 +19,7 @@ def find_available_port():
         return 5001
     return port
 
-def main():
+def run():
     """Main application entry point"""
     
     # Determine port
@@ -41,4 +41,4 @@ def main():
         sys.exit(1)
 
 if __name__ == '__main__':
-    main()
+    run()
