@@ -64,6 +64,7 @@ jobs:
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.WEBAPP_CLIENT_ID }}
+          password: ${{ secrets.WEBAPP_CLIENT_SECRET }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
