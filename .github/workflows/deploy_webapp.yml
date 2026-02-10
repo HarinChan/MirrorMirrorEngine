@@ -57,8 +57,13 @@ jobs:
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
+        id: download-artifact
         with:
           name: python-app
+
+      - name: List downloaded artifact files
+        run: |
+          ls -R  # List all files in the workspace
       
       - name: Login to Azure
         run: |
@@ -73,4 +78,5 @@ jobs:
         with:
           app-name: 'MirrorMirrorWebApp'
           slot-name: 'Production'
+          package: ${{ github.workspace }}/python-app/**
           
