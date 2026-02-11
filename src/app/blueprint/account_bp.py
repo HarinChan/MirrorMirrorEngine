@@ -145,7 +145,7 @@ def delete_account():
         return jsonify({"msg": "Internal server error", "error": str(e)}), 500
 
 
-@account_bp.route('/api/account/classrooms', methods=['GET'])
+@account_bp.route('/api/account/profiles', methods=['GET'])
 @jwt_required()
 def get_account_classrooms():
     """Get all classrooms for the current account with enhanced details"""
