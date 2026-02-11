@@ -24,6 +24,9 @@ def send_friend_request():
         return jsonify({"msg": "Profile not found"}), 404
 
     data = request.json
+    if not data:
+        return jsonify({"msg": "Request body is required"}), 400
+    
     target_classroom_id = data.get('classroomId')
     
     if not target_classroom_id:
@@ -67,17 +70,21 @@ def send_friend_request():
         reverse_request.status = 'accepted'
         
         # Create relations (two-way)
-        rel1 = Relation(from_profile_id=target_profile.id, to_profile_id=sender_profile.id)
-        rel2 = Relation(from_profile_id=sender_profile.id, to_profile_id=target_profile.id)
+        rel1 = Relation()
+        rel1.from_profile_id = target_profile.id
+        rel1.to_profile_id = sender_profile.id
+
+        rel2 = Relation()
+        rel2.from_profile_id = sender_profile.id
+        rel2.to_profile_id = target_profile.id
         
         # Notify original sender (who is now becoming a friend)
-        notif = Notification(
-            account_id=target_profile.account_id,
-            title="Friend Request Accepted",
-            message=f"{sender_profile.name} accepted your friend request!",
-            type="success",
-            related_id=str(sender_profile.id)
-        )
+        notif = Notification()
+        notif.account_id = target_profile.account_id
+        notif.title = "Friend Request Accepted"
+        notif.message = f"{sender_profile.name} accepted your friend request!"
+        notif.type = "success"
+        notif.related_id = str(sender_profile.id)
         
         db.session.add_all([rel1, rel2, notif])
         db.session.commit()
@@ -85,20 +92,17 @@ def send_friend_request():
         return jsonify({"msg": "Friend request accepted (mutual)", "status": "accepted"}), 200
 
     # Create new request
-    new_request = FriendRequest(
-        sender_profile_id=sender_profile.id,
-        receiver_profile_id=target_profile.id,
-        status='pending'
-    )
+    new_request = FriendRequest()
+    new_request.sender_profile_id = sender_profile.id
+    new_request.receiver_profile_id = target_profile.id
+    new_request.status = 'pending'
     
     # Notify receiver
-    notif = Notification(
-        account_id=target_profile.account_id,
-        title="New Friend Request",
-        message=f"{sender_profile.name} sent you a friend request!",
-        type="friend_request_received",
-        related_id=str(sender_profile.id)
-    )
+    notif = Notification()
+    notif.account_id = target_profile.account_id
+    notif.title = "New Friend Request"
+    notif.type = "friend_request_received"
+    notif.related_id = str(sender_profile.id)
     
     db.session.add_all([new_request, notif])
     db.session.commit()

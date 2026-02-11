@@ -9,13 +9,17 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
+from sqlalchemy import desc
 import os
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from .model.account import Account
 from .model import db
+from .model.account import Account
+from .model.notification import Notification
+from .model.profile import Profile
+from .model.relation import Relation
 
 from .blueprint.account_bp import account_bp
 from .blueprint.chroma_bp import chroma_bp
@@ -79,6 +83,9 @@ def register():
     """Register a new account"""
     data = request.json
     
+    if not data:
+        return jsonify({"msg": "Invalid request format"}), 400
+    
     email = data.get('email')
     password = data.get('password')
     organization = data.get('organization')
@@ -107,7 +114,10 @@ def register():
     password_hash = generate_password_hash(password)
     
     # Create account (no automatic profile creation)
-    account = Account(email=email, password_hash=password_hash, organization=organization)
+    account = Account()
+    account.email = email
+    account.password_hash = password_hash
+    account.organization = organization
     db.session.add(account)
     db.session.commit()
     
@@ -121,6 +131,9 @@ def register():
 def login():
     """Login and receive JWT token"""
     data = request.json
+    
+    if not data:
+        return jsonify({"msg": "Invalid request format"}), 400
     
     email = data.get('email')
     password = data.get('password')
@@ -219,7 +232,7 @@ def get_current_user():
             recent_calls.append({
                 "id": str(call.id),
                 "classroomId": call.target_classroom_id,
-                "classroomName": call.target_    '_name',
+                "classroomName": call.target_classroom_name,
                 "timestamp": call.timestamp.isoformat(),
                 "duration": call.duration_seconds,
                 "type": call.call_type

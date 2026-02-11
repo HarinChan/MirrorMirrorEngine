@@ -26,7 +26,7 @@ def get_account():
         
         classrooms = []
         for classroom in account.classrooms:
-            classroom_data = PenpalsHelper.format_classroom_response(classroom)
+            classroom_data = PenpalsHelper.format_profile_response(classroom)
             classrooms.append(classroom_data)
         
         return jsonify({
@@ -159,7 +159,7 @@ def get_account_classrooms():
         classrooms = []
         for classroom in account.classrooms:
             friends_count = classroom.sent_relations.count()
-            classroom_data = PenpalsHelper.format_classroom_response(classroom)
+            classroom_data = PenpalsHelper.format_profile_response(classroom)
             classroom_data["friends_count"] = friends_count
             classrooms.append(classroom_data)
         

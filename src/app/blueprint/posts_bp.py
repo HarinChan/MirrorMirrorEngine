@@ -69,6 +69,9 @@ def create_post():
         return jsonify({"msg": "Profile not found. Create a profile first."}), 400
         
     data = request.json
+    if not data:
+        return jsonify({"msg": "Request body is required"}), 400
+    
     content = data.get('content')
     image_url = data.get('imageUrl')
     quoted_post_id = data.get('quotedPostId')
@@ -76,12 +79,11 @@ def create_post():
     if not content:
         return jsonify({"msg": "Content is required"}), 400
         
-    post = Post(
-        profile_id=profile.id, 
-        content=content,
-        image_url=image_url,
-        quoted_post_id=quoted_post_id
-    )
+    post = Post()
+    post.profile_id = profile.id
+    post.content = content
+    post.image_url = image_url
+    post.quoted_post_id = quoted_post_id
     
     db.session.add(post)
     db.session.commit()

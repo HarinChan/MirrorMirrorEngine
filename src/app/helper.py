@@ -97,7 +97,7 @@ class PenpalsHelper:
         return unique_interests[:10]  # Limit to 10 interests
     
     @staticmethod
-    def format_classroom_response(classroom, include_friends: bool = False) -> Dict:
+    def format_profile_response(classroom, include_friends: bool = False) -> Dict:
         """
         Format classroom data for API responses.
         
