@@ -1,6 +1,6 @@
 import socket
 import re
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 from datetime import datetime, timezone
 
 
@@ -36,6 +36,8 @@ class PenpalsHelper:
         Returns:
             True if email format is valid, False otherwise
         """
+        if not email or not isinstance(email, str):
+            return False
         
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return bool(re.match(pattern, email))
@@ -73,6 +75,8 @@ class PenpalsHelper:
         Returns:
             Cleaned list of interests
         """
+        if not interests or not isinstance(interests, list):
+            return []
         
         sanitized = []
         for interest in interests:
