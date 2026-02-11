@@ -15,25 +15,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from .model.account import Account
-from .model.profile import Profile
-from .model.relation import Relation
-from .model.post import Post
 from .model import db
 
 from .blueprint.account_bp import account_bp
+from .blueprint.chroma_bp import chroma_bp
+from .blueprint.friends_bp import friends_bp
+from .blueprint.meeting_bp import meeting_bp
+from .blueprint.notification_bp import notification_bp
+from .blueprint.posts_bp import post_bp
 from .blueprint.profile_bp import profile_bp
-
-from .chromadb.chromadb_service import ChromaDBService
+from .blueprint.webex_bp import webex_bp
 
 def print_tables():
     with application.app_context():
         print("Registered tables:", [table.name for table in db.metadata.sorted_tables])
 
-
 application = Flask(__name__)
 CORS(application)
 print_tables()
-
 
 application.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
 application.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
@@ -65,9 +64,13 @@ with application.app_context():
 
 # register blue prints for API endpoints
 application.register_blueprint(account_bp)
+application.register_blueprint(chroma_bp)
+application.register_blueprint(friends_bp)
+application.register_blueprint(meeting_bp)
+application.register_blueprint(notification_bp)
+application.register_blueprint(post_bp)
 application.register_blueprint(profile_bp)
-
-chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="penpals_documents")
+application.register_blueprint(webex_bp)
 
 # routes
 
@@ -142,249 +145,111 @@ def login():
 @application.route('/api/auth/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
-    """Get current authenticated user's info"""
+    """Get current authenticated user's info, including classrooms and friends"""
     account_id = get_jwt_identity()
     account = Account.query.get(account_id)
     
     if not account:
         return jsonify({"msg": "Account not found"}), 404
     
-    # Get all classrooms for this account
+    # Get all classrooms for this account with friend data
     classrooms = []
+    
+    # Collect notifications
+    notifications = []
+    for notif in account.notifications.order_by(desc(Notification.created_at)).all():
+        notifications.append({
+            "id": str(notif.id),
+            "title": notif.title,
+            "message": notif.message,
+            "type": notif.type,
+            "read": notif.read,
+            "timestamp": notif.created_at.isoformat()
+        })
+
     for classroom in account.classrooms:
+        # Fetch friends (relations)
+        # We look for accepted relations where this classroom is either sender or receiver
+        friends = []
+        
+        # Sent accepted requests (my friends)
+        sent_relations = Relation.query.filter_by(from_profile_id=classroom.id, status='accepted').all()
+        for rel in sent_relations:
+            friend_profile = Profile.query.get(rel.to_profile_id)
+            if friend_profile:
+                friends.append({
+                    "id": str(friend_profile.id),
+                    "classroomId": str(friend_profile.id),
+                    "classroomName": friend_profile.name,
+                    "location": friend_profile.location,
+                    "addedDate": rel.created_at.isoformat() if rel.created_at else None,
+                    "friendshipStatus": "accepted"
+                })
+        
+        # Received accepted requests (also my friends)
+        received_relations = Relation.query.filter_by(to_profile_id=classroom.id, status='accepted').all()
+        for rel in received_relations:
+            friend_profile = Profile.query.get(rel.from_profile_id)
+            if friend_profile:
+                friends.append({
+                    "id": str(friend_profile.id),
+                    "classroomId": str(friend_profile.id),
+                    "classroomName": friend_profile.name,
+                    "location": friend_profile.location,
+                    "addedDate": rel.created_at.isoformat() if rel.created_at else None,
+                    "friendshipStatus": "accepted"
+                })
+        
+        # Received Pending Friend Requests
+        received_friend_requests = []
+        for req in classroom.received_requests:
+            if req.status == 'pending':
+                received_friend_requests.append({
+                    "id": str(req.id),
+                    "senderId": str(req.sender.id),
+                    "senderName": req.sender.name,
+                    "location": req.sender.location,
+                    "sentDate": req.created_at.isoformat()
+                })
+
+        # Recent Calls
+        recent_calls = []
+        # Calls made by this classroom
+        for call in classroom.call_history:
+            recent_calls.append({
+                "id": str(call.id),
+                "classroomId": call.target_classroom_id,
+                "classroomName": call.target_    '_name',
+                "timestamp": call.timestamp.isoformat(),
+                "duration": call.duration_seconds,
+                "type": call.call_type
+            })
+
         classrooms.append({
             "id": classroom.id,
             "name": classroom.name,
             "location": classroom.location,
-            "latitude": classroom.lattitude,  # Note: keeping original typo for consistency
+            "latitude": classroom.lattitude,
             "longitude": classroom.longitude,
             "class_size": classroom.class_size,
-            "interests": classroom.interests
+            "interests": classroom.interests,
+            "availability": classroom.availability, 
+            "friends": friends,
+            "receivedFriendRequests": received_friend_requests,
+            "recent_calls": recent_calls
         })
     
     return jsonify({
         "account": {
             "id": account.id,
             "email": account.email,
-            "organization": account.organization
+            "organization": account.organization,
+            "notifications": notifications,
+            "friends": classrooms[0]["friends"] if classrooms else [], # flatten for convenience if needed by frontend
+            "recentCalls": classrooms[0]["recent_calls"] if classrooms else [] # flatten
         },
         "classrooms": classrooms
     }), 200
-
-@application.route('/api/profiles/get', methods=["GET"])
-def get_profile():
-    """Get profile by ID"""
-    data = request.json
-
-    id = data.get('id')
-
-    if not id:
-        return jsonify({"msg": "Profile not found"}), 404
-    
-    profile = Profile.query.filter_by(id=id).first()
-
-    if not profile:
-        return jsonify({"msg": "Profile not found"}), 404
-    
-    return jsonify({
-        "id": profile.id,
-        "account_id": profile.account_id,
-        "name": profile.name,
-        "location": profile.location,
-        "lattitude": profile.lattitude,
-        "longitude": profile.longitude,
-        "class_size": profile.class_size,
-        "availability": profile.availability,
-        "interests": profile.interests
-    }), 200
-
-# Create a new profile from JSON
-@application.route('/api/profiles/create', methods=["POST"])
-def create_profile():
-    """Create a new profile from JSON"""
-    data = request.json
-
-    required_fields = ["account_id", "name"]
-    for field in required_fields:
-        if not data.get(field):
-            return jsonify({"msg": f"Missing required field: {field}"}), 400
-
-    profile = Profile(
-        account_id=data.get("account_id"),
-        name=data.get("name"),
-        location=data.get("location"),
-        lattitude=data.get("lattitude"),
-        longitude=data.get("longitude"),
-        class_size=data.get("class_size"),
-        availability=data.get("availability"),
-        interests=data.get("interests")
-    )
-    db.session.add(profile)
-    db.session.commit()
-
-    return jsonify({
-        "msg": "Profile created successfully",
-        "id": profile.id
-    }), 201
-
-
-# ChromaDB Document Endpoints
-
-@application.route('/api/documents/upload', methods=['POST'])
-def upload_documents():
-    """
-    Upload documents to ChromaDB for embedding and storage
-    Expected JSON format:
-    {
-        "documents": ["text1", "text2", ...],
-        "metadatas": [{"key": "value"}, ...],  // optional
-        "ids": ["id1", "id2", ...]  // optional
-    }
-    """
-    try:
-        data = request.json
-        
-        if not data or 'documents' not in data:
-            return jsonify({"status": "error", "message": "Missing 'documents' field"}), 400
-        
-        documents = data.get('documents')
-        metadatas = data.get('metadatas', None)
-        ids = data.get('ids', None)
-        
-        if not isinstance(documents, list) or len(documents) == 0:
-            return jsonify({"status": "error", "message": "'documents' must be a non-empty list"}), 400
-        
-        result = chroma_service.add_documents(documents, metadatas, ids)
-        
-        if result['status'] == 'success':
-            return jsonify(result), 201
-        else:
-            return jsonify(result), 500
-            
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-@application.route('/api/documents/query', methods=['POST'])
-def query_documents():
-    """
-    Query ChromaDB for similar documents
-    Expected JSON format:
-    {
-        "query": "search text",
-        "n_results": 5,  // optional, defaults to 5
-        "where": {"key": "value"}  // optional metadata filter
-    }
-    """
-    try:
-        data = request.json
-        
-        if not data or 'query' not in data:
-            return jsonify({"status": "error", "message": "Missing 'query' field"}), 400
-        
-        query_text = data.get('query')
-        n_results = data.get('n_results', 5)
-        where = data.get('where', None)
-        
-        if not isinstance(query_text, str) or len(query_text.strip()) == 0:
-            return jsonify({"status": "error", "message": "'query' must be a non-empty string"}), 400
-        
-        result = chroma_service.query_documents(query_text, n_results, where)
-        
-        if result['status'] == 'success':
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 500
-            
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-@application.route('/api/documents/delete', methods=['DELETE'])
-def delete_documents():
-    """
-    Delete documents from ChromaDB
-    Expected JSON format:
-    {
-        "ids": ["id1", "id2", ...]
-    }
-    """
-    try:
-        data = request.json
-        
-        if not data or 'ids' not in data:
-            return jsonify({"status": "error", "message": "Missing 'ids' field"}), 400
-        
-        ids = data.get('ids')
-        
-        if not isinstance(ids, list) or len(ids) == 0:
-            return jsonify({"status": "error", "message": "'ids' must be a non-empty list"}), 400
-        
-        result = chroma_service.delete_documents(ids)
-        
-        if result['status'] == 'success':
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 500
-            
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-@application.route('/api/documents/info', methods=['GET'])
-def get_collection_info():
-    """
-    Get information about the ChromaDB collection
-    """
-    try:
-        result = chroma_service.get_collection_info()
-        
-        if result['status'] == 'success':
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 500
-            
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-@application.route('/api/documents/update', methods=['PUT'])
-def update_document():
-    """
-    Update an existing document in ChromaDB
-    Expected JSON format:
-    {
-        "id": "document_id",
-        "document": "new text",
-        "metadata": {"key": "value"}  // optional
-    }
-    """
-    try:
-        data = request.json
-        
-        if not data or 'id' not in data or 'document' not in data:
-            return jsonify({"status": "error", "message": "Missing 'id' or 'document' field"}), 400
-        
-        document_id = data.get('id')
-        document = data.get('document')
-        metadata = data.get('metadata', None)
-        
-        if not isinstance(document_id, str) or len(document_id.strip()) == 0:
-            return jsonify({"status": "error", "message": "'id' must be a non-empty string"}), 400
-        
-        if not isinstance(document, str) or len(document.strip()) == 0:
-            return jsonify({"status": "error", "message": "'document' must be a non-empty string"}), 400
-        
-        result = chroma_service.update_document(document_id, document, metadata)
-        
-        if result['status'] == 'success':
-            return jsonify(result), 200
-        else:
-            return jsonify(result), 500
-            
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=5001)
