@@ -25,7 +25,7 @@ def get_account():
             return jsonify({"msg": "Account not found"}), 404
         
         classrooms = []
-        for classroom in account.classrooms:
+        for classroom in account.profiles:
             classroom_data = PenpalsHelper.format_profile_response(classroom)
             classrooms.append(classroom_data)
         
@@ -130,7 +130,7 @@ def delete_account():
             return jsonify({"msg": "Account not found"}), 404
         
         # Get classroom count for confirmation
-        classroom_count = account.classrooms.count()
+        classroom_count = account.profiles.count()
         
         db.session.delete(account)
         db.session.commit()
@@ -157,7 +157,7 @@ def get_account_classrooms():
             return jsonify({"msg": "Account not found"}), 404
         
         classrooms = []
-        for classroom in account.classrooms:
+        for classroom in account.profiles:
             friends_count = classroom.sent_relations.count()
             classroom_data = PenpalsHelper.format_profile_response(classroom)
             classroom_data["friends_count"] = friends_count
@@ -184,11 +184,11 @@ def get_account_stats():
         if not account:
             return jsonify({"msg": "Account not found"}), 404
         
-        total_classrooms = account.classrooms.count()
+        total_classrooms = account.profiles.count()
         total_connections = 0
         all_interests = set()
         
-        for classroom in account.classrooms:
+        for classroom in account.profiles:
             total_connections += classroom.sent_relations.count()
             if classroom.interests:
                 all_interests.update(classroom.interests)

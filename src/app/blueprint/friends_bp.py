@@ -19,7 +19,7 @@ def send_friend_request():
     if not account:
         return jsonify({"msg": "User not found"}), 404
 
-    sender_profile = account.classrooms.first()
+    sender_profile = account.profiles.first()
     if not sender_profile:
         return jsonify({"msg": "Profile not found"}), 404
 

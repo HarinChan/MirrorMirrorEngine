@@ -64,7 +64,7 @@ def create_post():
         return jsonify({"msg": "User not found"}), 404
         
     # Use the first profile for posting (simplification)
-    profile = account.classrooms.first()
+    profile = account.profiles.first()
     if not profile:
         return jsonify({"msg": "Profile not found. Create a profile first."}), 400
         

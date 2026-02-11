@@ -20,7 +20,7 @@ def get_upcoming_meetings():
     if not account:
         return jsonify({"msg": "User not found"}), 404
         
-    profile = account.classrooms.first()
+    profile = account.profiles.first()
     if not profile:
         return jsonify({"meetings": []}), 200
         

@@ -95,7 +95,7 @@ def create_webex_meeting():
         
     # Assuming the account has one profile/classroom for now, or we pick the first one
     # The frontend should ideally send the profile_id, but for now we default to the first one.
-    creator_profile = account.classrooms.first()
+    creator_profile = account.profiles.first()
     if not creator_profile:
          return jsonify({"msg": "No profile found for account"}), 400
     
@@ -182,7 +182,7 @@ def manage_meeting(meeting_id):
         return jsonify({"msg": "Meeting not found"}), 404
         
     # Check authorization (creator or participant)
-    profile = account.classrooms.first()
+    profile = account.profiles.first()
     if not profile:
         return jsonify({"msg": "Profile not found"}), 404
         
@@ -286,7 +286,7 @@ def get_pending_invitations():
     if not account:
         return jsonify({"msg": "User not found"}), 404
     
-    receiver_profile = account.classrooms.first()
+    receiver_profile = account.profiles.first()
     if not receiver_profile:
         return jsonify({"msg": "No profile found for account"}), 400
     
@@ -320,7 +320,7 @@ def get_sent_invitations():
     if not account:
         return jsonify({"msg": "User not found"}), 404
     
-    sender_profile = account.classrooms.first()
+    sender_profile = account.profiles.first()
     if not sender_profile:
         return jsonify({"msg": "No profile found for account"}), 400
     
@@ -354,7 +354,7 @@ def accept_invitation(invitation_id):
     if not account:
         return jsonify({"msg": "User not found"}), 404
     
-    receiver_profile = account.classrooms.first()
+    receiver_profile = account.profiles.first()
     if not receiver_profile:
         return jsonify({"msg": "No profile found for account"}), 400
     
@@ -442,7 +442,7 @@ def decline_invitation(invitation_id):
     if not account:
         return jsonify({"msg": "User not found"}), 404
     
-    receiver_profile = account.classrooms.first()
+    receiver_profile = account.profiles.first()
     if not receiver_profile:
         return jsonify({"msg": "No profile found for account"}), 400
     
@@ -475,7 +475,7 @@ def cancel_invitation(invitation_id):
     if not account:
         return jsonify({"msg": "User not found"}), 404
     
-    sender_profile = account.classrooms.first()
+    sender_profile = account.profiles.first()
     if not sender_profile:
         return jsonify({"msg": "No profile found for account"}), 400
     

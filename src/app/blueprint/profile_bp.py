@@ -484,3 +484,27 @@ def disconnect_profiles(profile_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": "Internal server error", "error": str(e)}), 500
+
+@profile_bp.route('/api/profiles', methods=['GET'])
+@jwt_required()
+def get_all_classrooms():
+    """Get list of all classrooms (public)"""
+    try:
+        # Get query parameters
+        limit = request.args.get('limit', default=50, type=int)
+        
+        # Enforce max limit
+        limit = min(limit, 100)
+        
+        # Get all classrooms sorted by creation time (newest first)
+        classrooms = Profile.query.order_by(Profile.id.desc()).limit(limit).all()
+        
+        classrooms_data = [PenpalsHelper.format_profile_response(c) for c in classrooms]
+        
+        return jsonify({
+            "classrooms": classrooms_data,
+            "count": len(classrooms_data)
+        }), 200
+    
+    except Exception as e:
+        return jsonify({"msg": "Internal server error", "error": str(e)}), 500
