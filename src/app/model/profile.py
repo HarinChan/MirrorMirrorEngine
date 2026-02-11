@@ -1,3 +1,4 @@
+from flask_sqlalchemy import SQLAlchemy
 from . import db
 
 class Profile(db.Model):
