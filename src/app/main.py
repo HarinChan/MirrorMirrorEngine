@@ -20,6 +20,7 @@ from .model.account import Account
 from .model.notification import Notification
 from .model.profile import Profile
 from .model.relation import Relation
+from .model.recentcall import RecentCall
 
 from .blueprint.account_bp import account_bp
 from .blueprint.chroma_bp import chroma_bp
@@ -180,7 +181,7 @@ def get_current_user():
             "timestamp": notif.created_at.isoformat()
         })
 
-    for classroom in account.classrooms:
+    for classroom in account.profiles:
         # Fetch friends (relations)
         # We look for accepted relations where this classroom is either sender or receiver
         friends = []
