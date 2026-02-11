@@ -8,8 +8,10 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..model import db
 from ..model.account import Account
+from ..model.profile import Profile
+from ..model.relation import Relation
 from ..helper import PenpalsHelper
-from ..chromadb.chromadb_service import ChromaDBService
+from ..service.chromadb_service import ChromaDBService
 
 
 profile_bp = Blueprint('profile', __name__)
@@ -65,16 +67,15 @@ def create_profile():
             except (ValueError, TypeError):
                 return jsonify({"msg": "Invalid class size"}), 400
         
-        profile = Profile(
-            account_id=account.id,
-            name=name,
-            location=data.get('location', '').strip() or None,
-            lattitude=latitude,  # keeping original typo for consistency
-            longitude=longitude,
-            class_size=class_size,
-            availability=availability,
-            interests=interests
-        )
+        profile = Profile()
+        profile.account_id = account_id
+        profile.name = name
+        profile.location = data.get('location', '').strip() or None
+        profile.lattitude = latitude
+        profile.longitude = longitude
+        profile.class_size = class_size
+        profile.availability = availability
+        profile.interests = interests
         
         db.session.add(profile)
         db.session.flush()
@@ -282,7 +283,8 @@ def search_profiles():
             search_interests = PenpalsHelper.sanitize_interests(interests)
             search_query = " ".join(search_interests)
         else:
-            search_query = str(interests).strip()
+            search_interests = [str(interests).strip()]
+            search_query = search_interests[0]
         
         if not search_query:
             return jsonify({"msg": "No valid interests provided"}), 400
@@ -307,7 +309,7 @@ def search_profiles():
                     
                     # Add manual similarity calculation as well
                     manual_similarity = PenpalsHelper.calculate_interest_similarity(
-                        search_interests if isinstance(interests, list) else [search_query],
+                        search_interests,
                         profile.interests or []
                     )
                     profile_data["manual_similarity"] = round(manual_similarity, 3)
@@ -364,8 +366,13 @@ def connect_profiles(profile_id):
             return jsonify({"msg": "Profiles are already friends"}), 409
         
         # Create bidirectional friendship
-        relation1 = Relation(from_profile_id=from_profile_id, to_profile_id=profile_id)
-        relation2 = Relation(from_profile_id=profile_id, to_profile_id=from_profile_id)
+        relation1 = Relation()
+        relation1.from_profile_id = from_profile_id
+        relation1.to_profile_id = profile_id
+
+        relation2 = Relation()
+        relation2.from_profile_id = profile_id
+        relation2.to_profile_id = from_profile
         
         db.session.add(relation1)
         db.session.add(relation2)
@@ -476,4 +483,28 @@ def disconnect_profiles(profile_id):
     
     except Exception as e:
         db.session.rollback()
+        return jsonify({"msg": "Internal server error", "error": str(e)}), 500
+
+@profile_bp.route('/api/profiles', methods=['GET'])
+@jwt_required()
+def get_all_classrooms():
+    """Get list of all classrooms (public)"""
+    try:
+        # Get query parameters
+        limit = request.args.get('limit', default=50, type=int)
+        
+        # Enforce max limit
+        limit = min(limit, 100)
+        
+        # Get all classrooms sorted by creation time (newest first)
+        classrooms = Profile.query.order_by(Profile.id.desc()).limit(limit).all()
+        
+        classrooms_data = [PenpalsHelper.format_profile_response(c) for c in classrooms]
+        
+        return jsonify({
+            "classrooms": classrooms_data,
+            "count": len(classrooms_data)
+        }), 200
+    
+    except Exception as e:
         return jsonify({"msg": "Internal server error", "error": str(e)}), 500

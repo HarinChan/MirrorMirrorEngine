@@ -4,8 +4,6 @@ import uuid
 import chromadb
 from chromadb.api.types import Metadata
 
-
-
 class ChromaDBService:
     """Service for managing document embeddings with ChromaDB"""
     def __init__(self, persist_directory: str = "./chroma_db", collection_name: str = "documents"):

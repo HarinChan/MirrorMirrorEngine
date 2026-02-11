@@ -25,8 +25,8 @@ def get_account():
             return jsonify({"msg": "Account not found"}), 404
         
         classrooms = []
-        for classroom in account.classrooms:
-            classroom_data = PenpalsHelper.format_classroom_response(classroom)
+        for classroom in account.profiles:
+            classroom_data = PenpalsHelper.format_profile_response(classroom)
             classrooms.append(classroom_data)
         
         return jsonify({
@@ -130,7 +130,7 @@ def delete_account():
             return jsonify({"msg": "Account not found"}), 404
         
         # Get classroom count for confirmation
-        classroom_count = account.classrooms.count()
+        classroom_count = account.profiles.count()
         
         db.session.delete(account)
         db.session.commit()
@@ -145,7 +145,7 @@ def delete_account():
         return jsonify({"msg": "Internal server error", "error": str(e)}), 500
 
 
-@account_bp.route('/api/account/classrooms', methods=['GET'])
+@account_bp.route('/api/account/profiles', methods=['GET'])
 @jwt_required()
 def get_account_classrooms():
     """Get all classrooms for the current account with enhanced details"""
@@ -157,9 +157,9 @@ def get_account_classrooms():
             return jsonify({"msg": "Account not found"}), 404
         
         classrooms = []
-        for classroom in account.classrooms:
+        for classroom in account.profiles:
             friends_count = classroom.sent_relations.count()
-            classroom_data = PenpalsHelper.format_classroom_response(classroom)
+            classroom_data = PenpalsHelper.format_profile_response(classroom)
             classroom_data["friends_count"] = friends_count
             classrooms.append(classroom_data)
         
@@ -184,11 +184,11 @@ def get_account_stats():
         if not account:
             return jsonify({"msg": "Account not found"}), 404
         
-        total_classrooms = account.classrooms.count()
+        total_classrooms = account.profiles.count()
         total_connections = 0
         all_interests = set()
         
-        for classroom in account.classrooms:
+        for classroom in account.profiles:
             total_connections += classroom.sent_relations.count()
             if classroom.interests:
                 all_interests.update(classroom.interests)
