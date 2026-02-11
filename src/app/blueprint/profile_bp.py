@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..model import db
 from ..model.account import Account
 from ..helper import PenpalsHelper
-from ..chromadb.chromadb_service import ChromaDBService
+from ..service.chromadb_service import ChromaDBService
 
 
 profile_bp = Blueprint('profile', __name__)
