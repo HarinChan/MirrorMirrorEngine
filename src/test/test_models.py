@@ -211,11 +211,11 @@ class TestFriendRequestModel:
         sender = create_profile(account, name='Sender')
         receiver = create_profile(account, name='Receiver')
         
-        friend_request = FriendRequest(
-            sender_profile_id=sender.id,
-            receiver_profile_id=receiver.id,
-            status='pending'
-        )
+        friend_request = FriendRequest()
+        friend_request.sender_profile_id = sender.id
+        friend_request.receiver_profile_id = receiver.id
+        friend_request.status = 'pending'
+
         db.session.add(friend_request)
         db.session.commit()
         
@@ -230,11 +230,11 @@ class TestFriendRequestModel:
         sender = create_profile(account, name='Sender')
         receiver = create_profile(account, name='Receiver')
         
-        friend_request = FriendRequest(
-            sender_profile_id=sender.id,
-            receiver_profile_id=receiver.id,
-            status='pending'
-        )
+        friend_request = FriendRequest()
+        friend_request.sender_profile_id = sender.id
+        friend_request.receiver_profile_id = receiver.id
+        friend_request.status = 'pending'
+
         db.session.add(friend_request)
         db.session.commit()
         
@@ -304,15 +304,15 @@ class TestMeetingModel:
         account = create_account()
         creator = create_profile(account, name='Creator')
         
-        meeting = Meeting(
-            webex_id='webex123',
-            title='Test Meeting',
-            start_time=datetime.utcnow(),
-            end_time=datetime.utcnow(),
-            web_link='https://meet.webex.com/test',
-            password='pass123',
-            creator_id=creator.id
-        )
+        meeting = Meeting()
+        meeting.webex_id = 'webex123'
+        meeting.title = 'Test Meeting'
+        meeting.start_time = datetime.utcnow()
+        meeting.end_time = datetime.utcnow()
+        meeting.web_link = 'https://meet.webex.com/test'
+        meeting.password = 'pass123'
+        meeting.creator_id = creator.id
+        
         db.session.add(meeting)
         db.session.commit()
         
@@ -325,13 +325,13 @@ class TestMeetingModel:
         account = create_account()
         creator = create_profile(account, name='Creator')
         
-        meeting = Meeting(
-            webex_id='webex123',
-            title='Test Meeting',
-            start_time=datetime.utcnow(),
-            end_time=datetime.utcnow(),
-            creator_id=creator.id
-        )
+        meeting = Meeting()
+        meeting.webex_id = 'webex123'
+        meeting.title = 'Test Meeting'
+        meeting.start_time = datetime.utcnow()
+        meeting.end_time = datetime.utcnow()
+        meeting.creator_id = creator.id
+
         db.session.add(meeting)
         db.session.commit()
         
@@ -348,14 +348,14 @@ class TestMeetingInvitationModel:
         sender = create_profile(account, name='Sender')
         receiver = create_profile(account, name='Receiver')
         
-        invitation = MeetingInvitation(
-            sender_profile_id=sender.id,
-            receiver_profile_id=receiver.id,
-            title='Meeting Invitation',
-            start_time=datetime.utcnow(),
-            end_time=datetime.utcnow(),
-            status='pending'
-        )
+        invitation = MeetingInvitation()
+        invitation.sender_profile_id = sender.id
+        invitation.receiver_profile_id = receiver.id
+        invitation.title = 'Meeting Invitation'
+        invitation.start_time = datetime.utcnow()
+        invitation.end_time = datetime.utcnow()
+        invitation.status = 'pending'
+
         db.session.add(invitation)
         db.session.commit()
         
@@ -368,14 +368,14 @@ class TestMeetingInvitationModel:
         sender = create_profile(account, name='Sender')
         receiver = create_profile(account, name='Receiver')
         
-        invitation = MeetingInvitation(
-            sender_profile_id=sender.id,
-            receiver_profile_id=receiver.id,
-            title='Test',
-            start_time=datetime.utcnow(),
-            end_time=datetime.utcnow(),
-            status='pending'
-        )
+        invitation = MeetingInvitation()
+        invitation.sender_profile_id = sender.id
+        invitation.receiver_profile_id = receiver.id
+        invitation.title = 'Meeting Invitation'
+        invitation.start_time = datetime.utcnow()
+        invitation.end_time = datetime.utcnow()
+        invitation.status = 'pending'
+        
         db.session.add(invitation)
         db.session.commit()
         
