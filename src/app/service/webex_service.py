@@ -2,14 +2,15 @@ import os
 import requests
 from datetime import datetime
 import urllib.parse
+from ..helper import PenpalsHelper as helper
 
 class WebexService:
     BASE_URL = "https://webexapis.com/v1"
     
     def __init__(self):
-        self.client_id = os.getenv('WEBEX_CLIENT_ID')
-        self.client_secret = os.getenv('WEBEX_CLIENT_SECRET')
-        self.redirect_uri = os.getenv('WEBEX_REDIRECT_URI')
+        self.client_id = helper.get_env_variable('WEBEX_CLIENT_ID')
+        self.client_secret = helper.get_env_variable('WEBEX_CLIENT_SECRET')
+        self.redirect_uri = helper.get_env_variable('WEBEX_REDIRECT_URI')
         
     def get_auth_url(self):
         """Generate the WebEx OAuth authorization URL"""
