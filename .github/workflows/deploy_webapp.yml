@@ -72,6 +72,10 @@ jobs:
 
           az webapp config appsettings set --name ${{ vars.WEBAPP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }} --settings FLASK_SECRET_KEY=${{ secrets.FLASK_SECRET_KEY }}
           az webapp config appsettings set --name ${{ vars.WEBAPP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }} --settings JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          az webapp config appsettings set --name ${{ vars.WEBAPP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }} --settings WEBEX_ACCESS_TOKEN=${{ secrets.WEBEX_ACCESS_TOKEN }}
+          az webapp config appsettings set --name ${{ vars.WEBAPP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }} --settings WEBEX_CLIENT_ID=${{ secrets.WEBEX_CLIENT_ID }}
+          az webapp config appsettings set --name ${{ vars.WEBAPP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }} --settings WEBEX_CLIENT_SECRET=${{ secrets.WEBEX_CLIENT_SECRET }}
+          az webapp config appsettings set --name ${{ vars.WEBAPP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP }} --settings WEBEX_REDIRECT_URI=${{ secrets.WEBEX_REDIRECT_URI }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
