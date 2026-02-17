@@ -45,6 +45,11 @@ application.config['SECRET_KEY'] = helper.get_env_variable('FLASK_SECRET_KEY')
 application.config['JWT_SECRET_KEY'] = helper.get_env_variable('JWT_SECRET_KEY')
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
+application.config['WEBEX_ACCESS_TOKEN'] = helper.get_env_variable('WEBEX_ACCESS_TOKEN')
+application.config['WEBEX_CLIENT_ID'] = helper.get_env_variable('WEBEX_CLIENT_ID')
+application.config['WEBEX_CLIENT_SECRET'] = helper.get_env_variable('WEBEX_CLIENT_SECRET')
+application.config['WEBEX_REDIRECT_URI'] = helper.get_env_variable('WEBEX_REDIRECT_URI')
+
 db_uri = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
 if db_uri.startswith('sqlite:///') and not db_uri.startswith('sqlite:////'):
     rel_path = db_uri.replace('sqlite:///', '', 1)
