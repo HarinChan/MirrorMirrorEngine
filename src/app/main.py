@@ -31,6 +31,8 @@ from .blueprint.posts_bp import post_bp
 from .blueprint.profile_bp import profile_bp
 from .blueprint.webex_bp import webex_bp
 
+from .helper import PenpalsHelper as helper
+
 def print_tables():
     with application.app_context():
         print("Registered tables:", [table.name for table in db.metadata.sorted_tables])
@@ -39,8 +41,8 @@ application = Flask(__name__)
 CORS(application)
 print_tables()
 
-application.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
-application.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
+application.config['SECRET_KEY'] = helper.get_env_variable('FLASK_SECRET_KEY')
+application.config['JWT_SECRET_KEY'] = helper.get_env_variable('JWT_SECRET_KEY')
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 
 db_uri = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')

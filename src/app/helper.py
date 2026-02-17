@@ -1,5 +1,6 @@
 import socket
 import re
+import os
 from typing import List, Dict, Optional
 from datetime import datetime, timezone
 
@@ -7,6 +8,14 @@ from datetime import datetime, timezone
 class PenpalsHelper:
     """Static helper class for PenPals application utilities"""
     
+    @staticmethod
+    def get_env_variable(var_name):
+        """Get the environment variable or raise an error."""
+        try:
+            return os.environ[var_name]
+        except KeyError:
+            raise EnvironmentError(f"Missing required environment variable: '{var_name}'")
+
     @staticmethod
     def find_open_port(start_port: int = 5000, end_port: int = 6000) -> int:
         """
