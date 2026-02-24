@@ -1,6 +1,11 @@
 ## Development Notes
 
-Python Version: 3.14
+Python Version: 3.13.7
+
+### New Env
+
+`python -m venv venv_new`
+`.\venv_new\Scripts\Activate.ps1`
 
 ## Docker Notes (not even required)
 

@@ -22,3 +22,4 @@ opentelemetry-exporter-otlp-proto-grpc>=1.39.1
 opentelemetry-proto>=1.39.1
 opentelemetry-sdk>=1.39.1
 opentelemetry-semantic-conventions>=0.60b1
+grep
