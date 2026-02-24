@@ -16,3 +16,9 @@ requests==2.31.0
 pydantic>=2.0.0
 azure-functions
 pytest
+opentelemetry-api>=1.39.1
+opentelemetry-exporter-otlp-proto-common>=1.39.1
+opentelemetry-exporter-otlp-proto-grpc>=1.39.1
+opentelemetry-proto>=1.39.1
+opentelemetry-sdk>=1.39.1
+opentelemetry-semantic-conventions>=0.60b1
