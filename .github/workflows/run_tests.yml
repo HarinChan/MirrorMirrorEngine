@@ -33,6 +33,11 @@ jobs:
       run: |
         pip install -r requirements.txt  # Install your dependencies
 
+    - name: Check ChromaDB Stuff
+      run: |
+        python --version
+        pip list
+
     - name: Run pytest
       env:
           FLASK_SECRET_KEY: ${{ secrets.FLASK_SECRET_KEY }}
