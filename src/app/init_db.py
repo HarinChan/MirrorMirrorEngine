@@ -13,8 +13,15 @@ from .model.friendrequest import FriendRequest
 from .model.relation import Relation
 
 #from models import FriendRequest, Relation
-from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
+import bcrypt
+import hashlib
+
+CLIENT_HASH_SALT = 'penpals-client-salt'
+
+def client_hash(password: str) -> str:
+    data = f"{CLIENT_HASH_SALT}:{password}".encode()
+    return hashlib.sha256(data).hexdigest()
 
 def init_db():
     with application.app_context():
@@ -24,7 +31,7 @@ def init_db():
         print("Database tables re-created successfully!")
 
         # 1. Create a default account for "Me"
-        me_password = generate_password_hash("Metest123!")
+        me_password = bcrypt.hashpw(client_hash("Metest123!").encode(), bcrypt.gensalt(10)).decode()
         me_account = Account(email="me@penpals.com", password_hash=me_password, organization="My School")
         db.session.add(me_account)
         db.session.commit()
@@ -81,7 +88,7 @@ def init_db():
         for c in classrooms_data:
             # Create a dummy account for each classroom
             email = f"{c['name'].replace(' ', '').lower()}@penpals.com"
-            pwd = generate_password_hash("Test1234!")
+            pwd = bcrypt.hashpw(client_hash("Test1234!").encode(), bcrypt.gensalt(10)).decode()
             account = Account(email=email, password_hash=pwd, organization="Global School")
             db.session.add(account)
             db.session.commit()
