@@ -24,6 +24,8 @@ The MirrorMirror engine provides a RESTful API for managing accounts, profiles/p
 
 ### Profile/profile Management
 
+Note: `/api/classrooms` also is a supported alias for these routes.
+
 | Endpoint                        | Method   | Description                               | Parameters                                                                             |
 | :------------------------------ | :------- | :---------------------------------------- | :------------------------------------------------------------------------------------- |
 | `/api/profiles`                 | `POST`   | Create a new profile profile              | `name`, `location`, `latitude`, `longitude`, `class_size`, `availability`, `interests` |

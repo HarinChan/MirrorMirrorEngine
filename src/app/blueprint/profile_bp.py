@@ -20,6 +20,7 @@ chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_nam
 
 
 @profile_bp.route('/api/profiles', methods=['POST'])
+@profile_bp.route('/api/classrooms', methods=['POST'])
 @jwt_required()
 def create_profile():
     """Create a new profile for the current account"""
@@ -111,6 +112,7 @@ def create_profile():
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>', methods=['GET'])
+@profile_bp.route('/api/classrooms/<int:profile_id>', methods=['GET'])
 @jwt_required()
 def get_profile(profile_id):
     """Get profile details with friends"""
@@ -129,6 +131,7 @@ def get_profile(profile_id):
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>', methods=['PUT'])
+@profile_bp.route('/api/classrooms/<int:profile_id>', methods=['PUT'])
 @jwt_required()
 def update_profile(profile_id):
     """Update profile information (only owner can update)"""
@@ -228,6 +231,7 @@ def update_profile(profile_id):
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>', methods=['DELETE'])
+@profile_bp.route('/api/classrooms/<int:profile_id>', methods=['DELETE'])
 @jwt_required()
 def delete_profile(profile_id):
     """Delete profile (only owner can delete)"""
@@ -264,6 +268,7 @@ def delete_profile(profile_id):
 
 
 @profile_bp.route('/api/profiles/search', methods=['POST'])
+@profile_bp.route('/api/classrooms/search', methods=['POST'])
 @jwt_required()
 def search_profiles():
     """Search for profiles by interests using semantic search"""
@@ -327,6 +332,7 @@ def search_profiles():
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>/connect', methods=['POST'])
+@profile_bp.route('/api/classrooms/<int:profile_id>/connect', methods=['POST'])
 @jwt_required()
 def connect_profiles(profile_id):
     """Add a profile as a friend (automatic bidirectional connection)"""
@@ -393,6 +399,7 @@ def connect_profiles(profile_id):
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>/friends', methods=['GET'])
+@profile_bp.route('/api/classrooms/<int:profile_id>/friends', methods=['GET'])
 @jwt_required()
 def get_profile_friends(profile_id):
     """Get all friends for a profile"""
@@ -438,6 +445,7 @@ def get_profile_friends(profile_id):
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>/disconnect', methods=['DELETE'])
+@profile_bp.route('/api/classrooms/<int:profile_id>/disconnect', methods=['DELETE'])
 @jwt_required()
 def disconnect_profiles(profile_id):
     """Remove friendship between profiles"""
@@ -486,6 +494,7 @@ def disconnect_profiles(profile_id):
         return jsonify({"msg": "Internal server error", "error": str(e)}), 500
 
 @profile_bp.route('/api/profiles', methods=['GET'])
+@profile_bp.route('/api/classrooms', methods=['GET'])
 @jwt_required()
 def get_all_classrooms():
     """Get list of all classrooms (public)"""

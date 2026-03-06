@@ -1,7 +1,7 @@
 """
 Posts API endpoints.
 """
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import desc
 
@@ -9,7 +9,12 @@ from ..model import db
 from ..model.account import Account
 from ..model.post import Post
 
+from ..service.chromadb_service import ChromaDBService
+
 post_bp = Blueprint('post', __name__)
+
+chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="penpals_documents")
+
 
 @post_bp.route('/api/posts', methods=['GET'])
 @jwt_required(optional=True)
@@ -87,6 +92,23 @@ def create_post():
     
     db.session.add(post)
     db.session.commit()
+
+    # Index post content in ChromaDB for RAG retrieval
+    try:
+        chroma_service.add_documents(
+            [post.content],
+            metadatas=[{
+                "source": "post",
+                "post_id": str(post.id),
+                "author": profile.name,
+                "profile_id": str(profile.id),
+                "timestamp": post.created_at.isoformat()
+            }],
+            ids=[f"post-{post.id}"]
+        )
+    except Exception as e:
+        # Don't fail post creation if indexing fails
+        current_app.logger.warning("Failed to index post in ChromaDB: %s", e)
     
     # Return the created post in the format frontend expects
     response_data = {
