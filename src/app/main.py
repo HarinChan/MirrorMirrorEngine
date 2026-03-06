@@ -11,6 +11,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 from sqlalchemy import desc
 import os
+import bcrypt
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -23,6 +24,7 @@ from .model.relation import Relation
 from .model.recentcall import RecentCall
 
 from .blueprint.account_bp import account_bp
+from .blueprint.chat_bp import chat_bp
 from .blueprint.chroma_bp import chroma_bp
 from .blueprint.friends_bp import friends_bp
 from .blueprint.meeting_bp import meeting_bp
@@ -71,6 +73,7 @@ with application.app_context():
 
 # register blue prints for API endpoints
 application.register_blueprint(account_bp)
+application.register_blueprint(chat_bp)
 application.register_blueprint(chroma_bp)
 application.register_blueprint(friends_bp)
 application.register_blueprint(meeting_bp)
@@ -96,25 +99,12 @@ def register():
     if not email or not password:
         return jsonify({"msg": "Missing required fields"}), 400
     
-    # Password validation: at least 8 chars, one uppercase, one lowercase, one digit, one special char
-    has_upper = any(c in capital_letters for c in password)
-    has_lower = any(c in lowercase_letters for c in password)
-    has_digit = any(c in digits for c in password)
-    has_special = any(
-        c not in capital_letters and c not in lowercase_letters and c not in digits
-        for c in password
-    )
-    if not (len(password) >= 8 and has_upper and has_lower and has_digit and has_special):
-        return jsonify({
-            "msg": "Password must be at least 8 characters and include one uppercase, one lowercase, one digit, and one special character."
-        }), 400
-    
     # Check if account exists
     if Account.query.filter_by(email=email).first():
         return jsonify({"msg": "Account already exists"}), 409
     
-    # Hash password using werkzeug
-    password_hash = generate_password_hash(password)
+    # Password is a client-side SHA-256 hash; bcrypt it for storage
+    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(10)).decode()
     
     # Create account (no automatic profile creation)
     account = Account()
@@ -146,7 +136,8 @@ def login():
     
     account = Account.query.filter_by(email=email).first()
     
-    if not account or not check_password_hash(account.password_hash, password):
+    # Password is a client-side SHA-256 hash; bcrypt it and compare
+    if not account or not bcrypt.checkpw(password.encode(), account.password_hash.encode()):
         return jsonify({"msg": "Invalid credentials"}), 401
     
     # Create JWT token with account ID as identity
