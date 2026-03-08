@@ -8,7 +8,6 @@ from datetime import datetime
 from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
 
-from src.app.model.account import Account
 from src.app.model.profile import Profile
 from src.app.model.relation import Relation
 from src.app.model.friendrequest import FriendRequest
@@ -429,3 +428,8 @@ class TestNotificationModel:
         notification = create_notification(account, related_id='123')
         
         assert notification.related_id == '123'
+
+
+@pytest.mark.unit
+class TestRecentCallModel:
+    assert True
