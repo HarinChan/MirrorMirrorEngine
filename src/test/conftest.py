@@ -305,7 +305,7 @@ def auth_token(app, create_account):
     account = create_account(email='auth@example.com', password='Password123!')
     
     with app.app_context():
-        token = create_access_token(identity=account.id)
+        token = create_access_token(identity=str(account.id))
     
     return token, account
 
