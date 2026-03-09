@@ -37,6 +37,7 @@ def get_posts():
             "id": str(post.id),
             "authorId": str(post.profile_id),
             "authorName": post.profile.name,
+            "authorAvatar": post.profile.avatar or "",
             "content": post.content,
             "imageUrl": post.image_url,
             "timestamp": post.created_at.isoformat(),
@@ -115,6 +116,7 @@ def create_post():
         "id": str(post.id),
         "authorId": str(profile.id),
         "authorName": profile.name,
+        "authorAvatar": profile.avatar or "",
         "content": post.content,
         "imageUrl": post.image_url,
         "timestamp": post.created_at.isoformat(),
@@ -181,3 +183,31 @@ def unlike_post(post_id):
     db.session.commit()
     
     return jsonify({"msg": "Post unliked", "likes": post.likes}), 200
+
+@post_bp.route('/api/posts/<int:post_id>', methods=['DELETE'])
+@jwt_required()
+def delete_post(post_id):
+    """Delete a post — only the author's classroom can delete it"""
+    current_user_id = get_jwt_identity()
+    account = Account.query.get(current_user_id)
+    if not account:
+        return jsonify({"msg": "User not found"}), 404
+
+    post = Post.query.get(post_id)
+    if not post:
+        return jsonify({"msg": "Post not found"}), 404
+
+    # Verify the post belongs to a classroom owned by this account
+    if post.profile.account_id != account.id:
+        return jsonify({"msg": "You can only delete your own posts"}), 403
+
+    # Remove from ChromaDB index (best-effort)
+    try:
+        chroma_service.delete_documents([f"post-{post.id}"])
+    except Exception as e:
+        application.logger.warning("Failed to remove post from ChromaDB: %s", e)
+
+    db.session.delete(post)
+    db.session.commit()
+
+    return jsonify({"msg": "Post deleted"}), 200
