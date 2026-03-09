@@ -31,7 +31,7 @@ To deploy this engine for you own purposes:
 1. Create a Azure account
 2. Obtain a subscription, note down its id as `your_subscription_id`
 3. Create a resource under the subscription: `your_resource_name`
-4. Create a azure webapp: `your_webapp_name`\
+4. Create a azure webapp: `your_webapp_name`.
 5. Go to your Azure Portal, search and select `Microsoft Entra ID`, then note down `your_tenant_id`
 6. Go to your Azure Portal, create a new `App Registration`
    1. Search for and select `App Registration`
@@ -50,6 +50,8 @@ To deploy this engine for you own purposes:
  | Key                           | Value                      |
  | :---------------------------- | :------------------------- |
  | `PYTHON_ENABLE_OPENTELEMETRY` | `"false"`                  |
+ | `FLASK_SECRET_KEY`            | `*a`                       |
+ | `JWT_SECRET_KEY`              | `*b`                       |
  | `AZURE_CLIENT_ID`             | `your_client_id`           |
  | `AZURE_CLIENT_SECRET`         | `your_client_secret`       |
  | `AZURE_TENANT_ID`             | `your_tenant_id`           |
@@ -57,6 +59,8 @@ To deploy this engine for you own purposes:
  | `WEBEX_ACCESS_TOKEN`          | `NOTDONE`                  |
  | `WEBEX_CLIENT_SECRET`         | `NOTDONE`                  |
  | `WEBEX_REDIRECT_URI`          | `"https://localhost:3000"` |
+
+ `*x`: your own set secret key value.
 
 8. On github web view of your repository, under `Settings Tab -> Secrets and Variables -> Actions`:
    
@@ -71,20 +75,18 @@ a. define the following `Repository Variables`:
 | `WEBAPP_CLIENT_ID`      | `your_client_id`           |
 | `WEBEX_REDIRECT_URI`    | `"https://localhost:3000"` |
 
-`*`: your own secret key value.
-
 b. define the following `Repository Secrets`:
    
 | Key                    | Value                |
 | :--------------------- | :------------------- |
-| `FLASK_SECRET_KEY`     | `*`                  |
-| `JWT_SECRET_KEY`       | `*`                  |
+| `FLASK_SECRET_KEY`     | `*a`                 |
+| `JWT_SECRET_KEY`       | `*b`                 |
 | `WEBAPP_CLIENT_SECRET` | `your_client_secret` |
 | `WEBEX_CLIENT_ID`      | `NOTDONE`            |
 | `WEBEX_ACCESS_TOKEN`   | `NOTDONE`            |
 | `WEBEX_CLIENT_SECRET`  | `NOTDONE`            |
 
-`*`: your own set secret key value.
+`*x`: your own set secret key value.
 
 1. Deploy your application by calling `Deploy Webapp` action via
    1. Arbitrary Pull Request
