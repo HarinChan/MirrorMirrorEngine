@@ -1,18 +1,32 @@
 # MirrorMirror
 
-## Deploying the Engine
-
-Required Python Version: 3.13.7
-
-This repository is set up using:
-**[Tutorial: Deploy environments in CI/CD by using GitHub and Azure Deployment Environments](https://learn.microsoft.com/en-us/azure/deployment-environments/tutorial-deploy-environments-in-cicd-github#4-connect-the-catalog-to-your-dev-center)**
-
+## Table of Contents
 ---
-
-To deploy this engine for you own purposes, first create a new repository using this repository as a template, then follow:
-- A. if you wish to deploy the engine on Azure from scratch
-- B. if you wish to host the engine on your own server
-
+- [MirrorMirror](#mirrormirror)
+  - [Table of Contents](#table-of-contents)
+  - [Deploying the Engine](#deploying-the-engine)
+      - [A. Deploy on Azure from Scratch](#a-deploy-on-azure-from-scratch)
+      - [B. Deploy on your own Server (Windows / Linux)](#b-deploy-on-your-own-server-windows--linux)
+  - [API Documentation](#api-documentation)
+        - [Authentication](#authentication)
+        - [Account Management](#account-management)
+        - [Profile/profile Management](#profileprofile-management)
+        - [Friend Requests](#friend-requests)
+        - [Meetings](#meetings)
+        - [Notifications](#notifications)
+        - [Posts](#posts)
+        - [WebEx](#webex)
+        - [AI \& Document Management (ChromaDB)](#ai--document-management-chromadb)
+---
+## Deploying the Engine
+---
+To deploy this engine for you own purposes:
+1. first create a new repository using this repository as a template
+2. Configure your python environment to be 3.13.7
+3. Follow one of the following sections:
+   - A. if you wish to deploy the engine on Azure from scratch
+   - B. if you wish to host the engine on your own server
+---
 #### A. Deploy on Azure from Scratch
 1. Create a Azure account
 2. Obtain a subscription, note down its id as `your_subscription_id`
@@ -30,7 +44,7 @@ To deploy this engine for you own purposes, first create a new repository using 
    8. Note down the value of the secret as `your_client_secret` 
 7. Set your WebApp's environmental variables:
    1. Go to the Azure Portal and navigate to your Webapp
-   2. In the left sidebar, go to Settings > Environment variables.
+   2. In the left sidebar, go to `Settings` -> `Environment variables`.
    3. Add the following App settings:
 
  | Key                           | Value                      |
@@ -75,33 +89,35 @@ b. define the following `Repository Secrets`:
 1. Deploy your application by calling `Deploy Webapp` action via
    1. Arbitrary Pull Request
    2. Manually on Github Webview under `Actions` Tab
-
+---
 #### B. Deploy on your own Server (Windows / Linux)
 1. Create a new repository from template.
 2. If you are on Windows, ensure you have WSL2 (Ubuntu) installed. For native Linux, ensure your package manager is up to date via 
 ```bash
 sudo apt update && sudo apt install python3-pip python3-venv nginx
 ```
-3. Install Gunicorn via
+1. Install Gunicorn via
 ```bash
 pip install gunicorn
 ```
-4. Set up environment Variables
- | Key                   | Value                      |
- | :-------------------- | :------------------------- |
- | `FLASK_SECRET_KEY`    | `*`                        |
- | `JWT_SECRET_KEY`      | `*`                        |
- | `WEBEX_CLIENT_ID`     | `NOTDONE`                  |
- | `WEBEX_ACCESS_TOKEN`  | `NOTDONE`                  |
- | `WEBEX_CLIENT_SECRET` | `NOTDONE`                  |
- | `WEBEX_REDIRECT_URI`  | `"https://localhost:3000"` |
-6. Serve with Gunicorn
+1. Set up environment Variables
+
+| Key                   | Value                      |
+| :-------------------- | :------------------------- |
+| `FLASK_SECRET_KEY`    | `*`                        |
+| `JWT_SECRET_KEY`      | `*`                        |
+| `WEBEX_CLIENT_ID`     | `NOTDONE`                  |
+| `WEBEX_ACCESS_TOKEN`  | `NOTDONE`                  |
+| `WEBEX_CLIENT_SECRET` | `NOTDONE`                  |
+| `WEBEX_REDIRECT_URI`  | `"https://localhost:3000"` |
+
+1. Serve with Gunicorn
 ```bash
 gunicorn --workers 1 --bind 0.0.0.0:8000 app:app
 ```
-
+---
 ## API Documentation
-
+---
 The MirrorMirror engine provides a RESTful API for managing accounts, profiles/profiles, social features, meetings, WebEx integration, and semantic search. Most endpoints require a JWT token in the `Authorization: Bearer <token>` header.
 
 ##### Authentication
