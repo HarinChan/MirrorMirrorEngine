@@ -1,5 +1,7 @@
 # MirrorMirror
 
+MirrorMirror engine is a 
+
 ## Table of Contents
 ---
 - [MirrorMirror](#mirrormirror)
@@ -17,13 +19,18 @@
         - [Posts](#posts)
         - [WebEx](#webex)
         - [AI \& Document Management (ChromaDB)](#ai--document-management-chromadb)
+
 ---
 ## Deploying the Engine
 ---
 To deploy this engine for you own purposes:
 1. first create a new repository using this repository as a template
 2. Configure your python environment to be 3.13.7
-3. Follow one of the following sections:
+3. Create an Webex app:
+   1. Signup / Log into Webex at [Webex for Developers](https://developer.webex.com/)
+   2. create an app [NOTDONE]
+   3. modify mutex permission for the app [NOTDONE]
+4. Follow one of the following sections:
    - A. if you wish to deploy the engine on Azure from scratch
    - B. if you wish to host the engine on your own server
 ---
