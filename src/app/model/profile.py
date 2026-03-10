@@ -9,9 +9,10 @@ class Profile(db.Model):
     
     name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=True) # Name of the place eg London
-    lattitude = db.Column(db.String(100), nullable=True)
+    latitude = db.Column(db.String(100), nullable=True)
     longitude = db.Column(db.String(100), nullable=True)
     class_size = db.Column(db.Integer, nullable=True)
+    avatar = db.Column(db.String(255), nullable = True)
     availability = db.Column(db.JSON, nullable=True)  # Store as JSON array
     interests = db.Column(db.JSON, nullable=True)  # Store as JSON array
     

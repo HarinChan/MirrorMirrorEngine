@@ -67,12 +67,16 @@ def create_profile():
                     return jsonify({"msg": "Class size must be between 1 and 100"}), 400
             except (ValueError, TypeError):
                 return jsonify({"msg": "Invalid class size"}), 400
+            
+        # Avatar
+        avatar = data.get('avatar')
         
         profile = Profile()
         profile.account_id = account_id
         profile.name = name
+        profile.avatar = avatar
         profile.location = data.get('location', '').strip() or None
-        profile.lattitude = latitude
+        profile.latitude = latitude
         profile.longitude = longitude
         profile.class_size = class_size
         profile.availability = availability
@@ -160,16 +164,19 @@ def update_profile(profile_id):
                 return jsonify({"msg": "Profile name too long (max 100 characters)"}), 400
             profile.name = name
         
+        if 'avatar' in data:
+            profile.avatar = data['avatar']
+        
         if 'location' in data:
             location = data['location']
             profile.location = location.strip() if location else None
         
         if 'latitude' in data or 'longitude' in data:
-            new_lat = data.get('latitude', profile.lattitude)
+            new_lat = data.get('latitude', profile.latitude)
             new_lng = data.get('longitude', profile.longitude)
             if not PenpalsHelper.validate_coordinates(new_lat, new_lng):
                 return jsonify({"msg": "Invalid coordinates"}), 400
-            profile.lattitude = new_lat
+            profile.latitude = new_lat
             profile.longitude = new_lng
         
         if 'class_size' in data:
