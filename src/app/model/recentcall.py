@@ -13,7 +13,7 @@ class RecentCall(db.Model):
     target_classroom_id = db.Column(db.String(50), nullable=True) # ID as string for flexibility
     
     duration_seconds = db.Column(db.Integer, default=0)
-    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     call_type = db.Column(db.String(20)) # outgoing, incoming
     
     # Relationships

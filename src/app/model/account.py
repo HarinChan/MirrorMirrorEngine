@@ -7,7 +7,7 @@ class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)  # HASHED password
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     account_metadata = db.Column(db.String(120), nullable=True)
     organization = db.Column(db.String(120), nullable=True)
 

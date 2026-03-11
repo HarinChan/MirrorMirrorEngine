@@ -8,6 +8,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import timedelta
 from sqlalchemy import desc
 import os
@@ -43,9 +44,13 @@ application = Flask(__name__)
 CORS(application)
 print_tables()
 
+# Respect reverse-proxy headers (e.g., X-Forwarded-Proto) in deployed environments.
+application.wsgi_app = ProxyFix(application.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
 application.config['SECRET_KEY'] = helper.get_env_variable('FLASK_SECRET_KEY')
 application.config['JWT_SECRET_KEY'] = helper.get_env_variable('JWT_SECRET_KEY')
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+application.config['PREFERRED_URL_SCHEME'] = os.getenv('PREFERRED_URL_SCHEME', 'http')
 
 db_uri = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
 if db_uri.startswith('sqlite:///') and not db_uri.startswith('sqlite:////'):
