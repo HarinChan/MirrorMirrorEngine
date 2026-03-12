@@ -236,7 +236,7 @@ def get_current_user():
             "id": classroom.id,
             "name": classroom.name,
             "location": classroom.location,
-            "latitude": classroom.lattitude,
+            "latitude": classroom.latitude,
             "longitude": classroom.longitude,
             "class_size": classroom.class_size,
             "interests": classroom.interests,

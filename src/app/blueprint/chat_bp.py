@@ -3,37 +3,19 @@ Chat API endpoints.
 """
 
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, jwt_manager
 
 from ..service.chromadb_service import ChromaDBService
+from ..service.fasterwhisper_service import TranscriptionInputError, transcribe_uploaded_file
 from ..service.openvino_service import generate_reply
 
-import os
-import threading
-import mimetypes
-import base64
-import importlib
-from pathlib import Path
 import json
-import tempfile
 import re 
 
 _CLASSROOM_TAG_RE = re.compile(r'<classroom\s+id="[^"]+"\s*/>')
 
-WhisperModel = None
-
 chat_bp = Blueprint('chat', __name__)
 
 chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="penpals_documents")
-
-TRANSCRIBE_MAX_AUDIO_BYTES = int(os.getenv('TRANSCRIBE_MAX_AUDIO_BYTES', str(20 * 1024 * 1024)))
-FASTER_WHISPER_MODEL_SIZE = os.getenv('FASTER_WHISPER_MODEL_SIZE', 'base')
-FASTER_WHISPER_DEVICE = os.getenv('FASTER_WHISPER_DEVICE', 'cpu')
-FASTER_WHISPER_COMPUTE_TYPE = os.getenv('FASTER_WHISPER_COMPUTE_TYPE', 'int8')
-FASTER_WHISPER_BEAM_SIZE = int(os.getenv('FASTER_WHISPER_BEAM_SIZE', '1'))
-
-_FASTER_WHISPER_MODEL = None
-_FASTER_WHISPER_MODEL_LOCK = threading.Lock()
 
 
 def _extract_context_classroom_ids(context_docs, limit: int = 3):
@@ -65,19 +47,6 @@ def _inject_classroom_tags(reply: str, context_docs, limit: int = 3) -> str:
 
     tags = "\n".join(f'<classroom id="{cid}"/>' for cid in classroom_ids)
     return reply.rstrip() + "\n" + tags
-
-
-
-
-def _guess_uploaded_mime_type(file_storage) -> str:
-    uploaded_mime = (getattr(file_storage, 'mimetype', '') or '').strip().lower()
-    if uploaded_mime.startswith('audio/') or uploaded_mime.startswith('video/'):
-        return uploaded_mime
-
-    guessed, _ = mimetypes.guess_type(getattr(file_storage, 'filename', '') or '')
-    if guessed:
-        return guessed
-    return 'audio/webm'
 
 def _extract_transcript_text(vibevoice_content):
     if isinstance(vibevoice_content, str):
@@ -111,68 +80,6 @@ def _extract_transcript_text(vibevoice_content):
         return " ".join(parts)
 
     return str(vibevoice_content or "").strip()
-
-def _audio_suffix_from_mime(mime_type: str) -> str:
-    mime_to_suffix = {
-        'audio/wav': '.wav',
-        'audio/x-wav': '.wav',
-        'audio/mpeg': '.mp3',
-        'audio/mp4': '.m4a',
-        'audio/flac': '.flac',
-        'audio/ogg': '.ogg',
-        'audio/webm': '.webm',
-        'video/webm': '.webm',
-        'video/mp4': '.mp4',
-    }
-    return mime_to_suffix.get((mime_type or '').lower(), '.webm')
-
-def _get_faster_whisper_model():
-    global WhisperModel
-    if WhisperModel is None:
-        try:
-            faster_whisper_module = importlib.import_module('faster_whisper')
-            WhisperModel = faster_whisper_module.WhisperModel
-        except Exception as import_error:
-            raise RuntimeError(f"faster-whisper is not installed: {import_error}")
-
-    global _FASTER_WHISPER_MODEL
-    with _FASTER_WHISPER_MODEL_LOCK:
-        if _FASTER_WHISPER_MODEL is None:
-            _FASTER_WHISPER_MODEL = WhisperModel(
-                FASTER_WHISPER_MODEL_SIZE,
-                device=FASTER_WHISPER_DEVICE,
-                compute_type=FASTER_WHISPER_COMPUTE_TYPE,
-            )
-    return _FASTER_WHISPER_MODEL
-
-def _transcribe_with_faster_whisper(audio_bytes: bytes, mime_type: str, hotwords: str = '') -> str:
-    model = _get_faster_whisper_model()
-    suffix = _audio_suffix_from_mime(mime_type)
-    temp_path = None
-
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-            temp_file.write(audio_bytes)
-            temp_path = temp_file.name
-
-        initial_prompt = f"Important context terms: {hotwords}" if hotwords else None
-        segments, _ = model.transcribe(
-            temp_path,
-            beam_size=FASTER_WHISPER_BEAM_SIZE,
-            vad_filter=True,
-            initial_prompt=initial_prompt,
-        )
-        transcript = " ".join(segment.text.strip() for segment in segments if segment.text and segment.text.strip()).strip()
-        if not transcript:
-            raise RuntimeError("faster-whisper returned an empty transcript")
-        return transcript
-    finally:
-        if temp_path:
-            try:
-                os.remove(temp_path)
-            except OSError:
-                pass
-
 @chat_bp.route('/api/chat', methods=['POST'])
 def chat():
     """
@@ -236,23 +143,15 @@ def transcribe_chat_audio():
                 "content_type": request.content_type,
             }), 400
 
-        audio_bytes = audio_file.read()
-        if not audio_bytes:
-            return jsonify({"status": "error", "message": "Uploaded audio file is empty"}), 400
-        if len(audio_bytes) > TRANSCRIBE_MAX_AUDIO_BYTES:
-            return jsonify({
-                "status": "error",
-                "message": f"Audio file too large. Max size is {TRANSCRIBE_MAX_AUDIO_BYTES} bytes"
-            }), 413
-
         hotwords = (request.form.get('hotwords') or '').strip()
-        mime_type = _guess_uploaded_mime_type(audio_file)
-        transcript = _transcribe_with_faster_whisper(audio_bytes, mime_type, hotwords)
+        transcript = transcribe_uploaded_file(audio_file, hotwords)
         return jsonify({
             "status": "success",
             "transcript": transcript,
             "engine": "faster-whisper",
         }), 200
+    except TranscriptionInputError as e:
+        return jsonify({"status": "error", "message": str(e)}), e.status_code
     except RuntimeError as e:
         return jsonify({
             "status": "error",
