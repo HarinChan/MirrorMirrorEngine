@@ -205,7 +205,7 @@ def delete_post(post_id):
     try:
         chroma_service.delete_documents([f"post-{post.id}"])
     except Exception as e:
-        application.logger.warning("Failed to remove post from ChromaDB: %s", e)
+        current_app.logger.warning("Failed to remove post from ChromaDB: %s", e)
 
     db.session.delete(post)
     db.session.commit()
