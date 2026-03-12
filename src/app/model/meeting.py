@@ -1,5 +1,9 @@
 from . import db
 from datetime import datetime, timezone
+from sqlalchemy.orm import Mapped
+from typing import List
+
+from profile import Profile
 
 meeting_participants = db.Table('meeting_participants',
     db.Column('meeting_id', db.Integer, db.ForeignKey('meetings.id'), primary_key=True),
