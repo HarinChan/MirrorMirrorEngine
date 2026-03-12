@@ -11,7 +11,7 @@ class MeetingInvitation(db.Model):
     title = db.Column(db.String(255), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.String(20), default='pending', nullable=False)  # pending, accepted, declined
+    status = db.Column(db.String(20), default='pending', nullable=False)  # pending, accepted, declined, cancelled
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     # Foreign key to the meeting created when invitation is accepted
