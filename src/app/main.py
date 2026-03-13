@@ -50,9 +50,9 @@ application.wsgi_app = ProxyFix(application.wsgi_app, x_for=1, x_proto=1, x_host
 application.config['SECRET_KEY'] = helper.get_env_variable('FLASK_SECRET_KEY')
 application.config['JWT_SECRET_KEY'] = helper.get_env_variable('JWT_SECRET_KEY')
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-application.config['PREFERRED_URL_SCHEME'] = os.getenv('PREFERRED_URL_SCHEME', 'http')
+application.config['PREFERRED_URL_SCHEME'] = helper.get_env_variable('PREFERRED_URL_SCHEME', 'http')
 
-db_uri = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
+db_uri = helper.get_env_variable('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
 if db_uri.startswith('sqlite:///') and not db_uri.startswith('sqlite:////'):
     rel_path = db_uri.replace('sqlite:///', '', 1)
     # Ensure the directory exists
