@@ -11,7 +11,7 @@ class Notification(db.Model):
     message = db.Column(db.Text, nullable=False)
     type = db.Column(db.String(50), default='info') # info, success, warning, error
     read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     related_id = db.Column(db.String(50), nullable=True) # ID of related entity (e.g. sender profile id)
     
     # Relationships
