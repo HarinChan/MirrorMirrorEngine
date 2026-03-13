@@ -29,15 +29,21 @@ class AzureKeyVaultService:
         print(client_id)
         print(client_secret)
 
-        if tenant_id == "" or client_id=="" or client_secret=="":
-            print("WARNING: Azure Key Vault credentials not fully set. Secrets will not be accessible.")
+        if not (tenant_id == "" or client_id=="" or client_secret==""):
+            credential = ClientSecretCredential(
+                tenant_id=tenant_id,
+                client_id=client_id,
+                client_secret=client_secret
+            )
+        else:
+            credential = DefaultAzureCredential() # will get the webapp's credential
+        try:
+            # Test if we can get a token (this will throw an error if credentials are not set)
+            credential.get_token("https://vault.azure.net/.default")
+            return credential
+        except Exception as e:
+            print(f"WARNING: Azure Key Vault credentials not fully set. Secrets will not be accessible. {e}")
             return None
-
-        return ClientSecretCredential(
-            tenant_id=tenant_id,
-            client_id=client_id,
-            client_secret=client_secret
-        )
 
     @staticmethod
     def get_secret(secret_name: str, default_value=None):
