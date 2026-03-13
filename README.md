@@ -59,12 +59,17 @@ Note: `/api/classrooms` also is a supported alias for these routes.
 
 ### Posts
 
-| Endpoint                 | Method | Description                   | Parameters                                                  |
-| :----------------------- | :----- | :---------------------------- | :---------------------------------------------------------- |
-| `/api/posts`             | `GET`  | Get all posts (auth optional) | None                                                        |
-| `/api/posts`             | `POST` | Create a new post             | `content`, `imageUrl` (optional), `quotedPostId` (optional) |
-| `/api/posts/<id>/like`   | `POST` | Like a post                   | None                                                        |
-| `/api/posts/<id>/unlike` | `POST` | Unlike a post                 | None                                                        |
+<!-- markdownlint-disable MD060 -->
+| Endpoint                               | Method   | Description                                                   | Parameters                                                      |
+| :------------------------------------- | :------- | :------------------------------------------------------------ | :-------------------------------------------------------------- |
+| `/api/posts`                           | `GET`    | Get all posts (auth optional)                                | None                                                            |
+| `/api/posts`                           | `POST`   | Create a new post                                             | `content`, `quotedPostId` (optional), `attachments` (optional) |
+| `/api/posts/<id>/like`                 | `POST`   | Like a post                                                   | None                                                            |
+| `/api/posts/<id>/unlike`               | `POST`   | Unlike a post                                                 | None                                                            |
+| `/api/posts/<id>`                      | `DELETE` | Delete a post and related attachment files                    | None                                                            |
+| `/api/posts/attachments/upload`        | `POST`   | Upload attachment for post creation                           | Multipart form-data: `file` or `attachment`                    |
+| `/api/posts/attachments/<storage_key>` | `GET`    | Fetch uploaded attachment by storage key                      | Path parameter: `storage_key`                                  |
+<!-- markdownlint-enable MD060 -->
 
 ### WebEx
 
