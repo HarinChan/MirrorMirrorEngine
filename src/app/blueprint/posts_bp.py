@@ -250,8 +250,17 @@ def create_post():
     if not account:
         return jsonify({"msg": "User not found"}), 404
         
-    # Use the first profile for posting (simplification)
-    profile = account.profiles.first()
+    # Use the classroom specified by the frontend, fall back to first if not provided
+    data = request.json
+    classroom_id = data.get('classroomId')
+    
+    if classroom_id:
+        profile = account.profiles.filter_by(id=classroom_id).first()
+        if not profile:
+            # classroomId provided but doesn't belong to this account — reject
+            return jsonify({"msg": "Classroom not found for this account"}), 404
+    else:
+        profile = account.profiles.first()
     if not profile:
         return jsonify({"msg": "Profile not found. Create a profile first."}), 400
         

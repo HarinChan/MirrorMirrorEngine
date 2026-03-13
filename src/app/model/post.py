@@ -17,7 +17,7 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
-    profile = db.relationship('Profile', backref='posts')
+    profile = db.relationship('Profile', backref=db.backref('posts', cascade='all, delete-orphan'))
     attachments = db.relationship(
         'PostAttachment',
         back_populates='post',

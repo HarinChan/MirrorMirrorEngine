@@ -72,9 +72,9 @@ def create_profile():
         avatar = data.get('avatar')
         
         profile = Profile()
-        profile.account_id = account_id
+        profile.account_id = account.id
         profile.name = name
-        profile.avatar = avatar
+        profile.description = data.get('description')
         profile.location = data.get('location', '').strip() or None
         profile.latitude = latitude
         profile.longitude = longitude
@@ -107,7 +107,7 @@ def create_profile():
         
         return jsonify({
             "msg": "Profile created successfully",
-            "profile": profile_data
+            "classroom": profile_data
         }), 201
     
     except Exception as e:
@@ -163,7 +163,10 @@ def update_profile(profile_id):
             if len(name) > 100:
                 return jsonify({"msg": "Profile name too long (max 100 characters)"}), 400
             profile.name = name
-        
+
+        if 'description' in data:
+            profile.description = data['description']
+
         if 'avatar' in data:
             profile.avatar = data['avatar']
         
