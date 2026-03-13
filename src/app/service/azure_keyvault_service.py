@@ -1,7 +1,6 @@
 import os
 from azure.identity import ClientSecretCredential
 from azure.keyvault.secrets import SecretClient
-from ..helper import PenpalsHelper as helper
 import re
 
 # 1. Provide the Vault URI (you can also store this in an environment variable)
@@ -21,12 +20,19 @@ class AzureKeyVaultService:
         return name
 
     def get_credential():
-        tenant_id=helper.get_env_variable("KEYVAULT_TENANT_ID",""),
-        client_id=helper.get_env_variable("KEYVAULT_CLIENT_ID",""),
-        client_secret=helper.get_env_variable("KEYVAULT_CLIENT_SECRET","")
-        if not tenant_id or not client_id or not client_secret:
+        from ..config import Config
+        tenant_id=Config.get_variable("KEYVAULT_TENANT_ID","",True)
+        client_id=Config.get_variable("KEYVAULT_CLIENT_ID","",True)
+        client_secret=Config.get_variable("KEYVAULT_CLIENT_SECRET","",True)
+
+        print(tenant_id)
+        print(client_id)
+        print(client_secret)
+
+        if tenant_id == "" or client_id=="" or client_secret=="":
             print("WARNING: Azure Key Vault credentials not fully set. Secrets will not be accessible.")
             return None
+
         return ClientSecretCredential(
             tenant_id=tenant_id,
             client_id=client_id,

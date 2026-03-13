@@ -1,5 +1,5 @@
 import pytest
-from your_module import AzureKeyVaultService # Import your class
+from src.app.service.azure_keyvault_service import AzureKeyVaultService
 
 def test_azure_secret_rotation():
     # requires setting envirobmental variables for KEYVAULT_TENANT_ID, KEYVAULT_CLIENT_ID, and KEYVAULT_CLIENT_SECRET

@@ -24,7 +24,7 @@ class Config:
         azkv_service.update_secret(name,value)
 
     @staticmethod
-    def get_variable(name, default=None):
+    def get_variable(name:str, default=None, ignore_azure: bool=False) -> str:
         """
             Get the environment variable.
             Try to retrieve environmental variables in the following order:
@@ -40,8 +40,9 @@ class Config:
             return variable
         if name in settings:
             return settings[name]
-        if azkv_service.get_credential() is not None:
-            variable = azkv_service.get_secret(name, None)
-            if variable:
-                return variable
+        if not ignore_azure:
+            if azkv_service.get_credential() is not None:
+                variable = azkv_service.get_secret(name, None)
+                if variable:
+                    return variable
         raise EnvironmentError(f"Missing required environment variable: '{name}'")
