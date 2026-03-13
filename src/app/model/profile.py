@@ -12,6 +12,7 @@ class Profile(db.Model):
     lattitude = db.Column(db.String(100), nullable=True)
     longitude = db.Column(db.String(100), nullable=True)
     class_size = db.Column(db.Integer, nullable=True)
+    avatar = db.Column(db.String(500), nullable=True)  # Profile avatar URL
     availability = db.Column(db.JSON, nullable=True)  # Store as JSON array
     interests = db.Column(db.JSON, nullable=True)  # Store as JSON array
     

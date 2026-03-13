@@ -9,7 +9,7 @@ class Relation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     from_profile_id = db.Column(db.Integer, db.ForeignKey('profiles.id'), nullable=False)
     to_profile_id = db.Column(db.Integer, db.ForeignKey('profiles.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # pending, accepted, blocked
+    status = db.Column(db.String(20), default='accepted')  # accepted, blocked
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     __table_args__ = (
