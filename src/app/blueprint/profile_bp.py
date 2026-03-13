@@ -72,10 +72,9 @@ def create_profile():
         avatar = data.get('avatar')
         
         profile = Profile()
-        profile.account_id = account_id
+        profile.account_id = account.id
         profile.name = name
         profile.description = data.get('description')
-        profile.avatar = avatar
         profile.location = data.get('location', '').strip() or None
         profile.latitude = latitude
         profile.longitude = longitude
@@ -108,7 +107,7 @@ def create_profile():
         
         return jsonify({
             "msg": "Profile created successfully",
-            "profile": profile_data
+            "classroom": profile_data
         }), 201
     
     except Exception as e:
