@@ -388,7 +388,7 @@ def connect_profiles(profile_id):
 
         relation2 = Relation()
         relation2.from_profile_id = profile_id
-        relation2.to_profile_id = from_profile
+        relation2.to_profile_id = from_profile_id
         
         db.session.add(relation1)
         db.session.add(relation2)
