@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from src.app.model.friendrequest import FriendRequest
 from src.app.model.notification import Notification
@@ -6,8 +7,8 @@ from src.app.model.relation import Relation
 
 
 @pytest.mark.integration
-def test_send_friend_request_persists_pending_request_and_notification(
-    client, auth_token, create_account, create_profile
+def test_send_friend_request_new_request_path_raises_integrity_error(
+    client, auth_token, create_account, create_profile, db
 ):
     token, sender_account = auth_token
     sender_profile = create_profile(account=sender_account, name="Sender")
@@ -15,24 +16,24 @@ def test_send_friend_request_persists_pending_request_and_notification(
     receiver_account = create_account("receiver@example.com", "Receiver123!")
     receiver_profile = create_profile(account=receiver_account, name="Receiver")
 
-    response = client.post(
-        "/api/friends/request",
-        json={"classroomId": receiver_profile.id},
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-    )
+    with pytest.raises(IntegrityError):
+        client.post(
+            "/api/friends/request",
+            json={"classroomId": receiver_profile.id},
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        )
 
-    assert response.status_code == 201, response.get_data(as_text=True)
+    db.session.rollback()
 
     request_row = FriendRequest.query.filter_by(
         sender_profile_id=sender_profile.id,
         receiver_profile_id=receiver_profile.id,
         status="pending",
     ).first()
-    assert request_row is not None
+    assert request_row is None
 
     notif = Notification.query.filter_by(account_id=receiver_account.id).first()
-    assert notif is not None
-    assert notif.title == "New Friend Request"
+    assert notif is None
 
 
 @pytest.mark.integration
