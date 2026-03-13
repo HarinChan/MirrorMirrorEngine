@@ -28,22 +28,22 @@ def send_friend_request():
         if not data:
             return jsonify({"msg": "Request body is required"}), 400
         
-        target_classroom_id = data.get('classroomId')
+        target_profile_id = data.get('profileId')
         
-        if not target_classroom_id:
-            return jsonify({"msg": "Target classroom ID is required"}), 400
+        if not target_profile_id:
+            return jsonify({"msg": "Target profile ID is required"}), 400
         
         # Validate ID is positive integer
         try:
-            target_classroom_id = int(target_classroom_id)
-            if target_classroom_id <= 0:
-                return jsonify({"msg": "Invalid classroom ID"}), 400
+            target_profile_id = int(target_profile_id)
+            if target_profile_id <= 0:
+                return jsonify({"msg": "Invalid profile ID"}), 400
         except (ValueError, TypeError):
-            return jsonify({"msg": "Invalid classroom ID format"}), 400
+            return jsonify({"msg": "Invalid profile ID format"}), 400
 
-        target_profile = Profile.query.get(target_classroom_id)
+        target_profile = Profile.query.get(target_profile_id)
         if not target_profile:
-            return jsonify({"msg": "Target classroom not found"}), 404
+            return jsonify({"msg": "Target profile not found"}), 404
             
         if sender_profile.id == target_profile.id:
             return jsonify({"msg": "Cannot add yourself as a friend"}), 400
