@@ -1,12 +1,19 @@
 import os
 from azure.identity import ClientSecretCredential
 from azure.keyvault.secrets import SecretClient
+import re
 
 # 1. Provide the Vault URI (you can also store this in an environment variable)
 VAULT_URL = "https://mirrormirrorvault.vault.azure.net/"
 
 
 class AzureKeyVaultService:
+
+    def sanitize_name(name: str) -> str:
+        name = re.sub(r'[_ ]', '-', name)
+        name = re.sub(r'[^a-zA-Z0-9-]', '', name)
+        name = name.strip('-')
+        return name
 
     def get_credential():
         return ClientSecretCredential(
@@ -16,7 +23,8 @@ class AzureKeyVaultService:
         )
 
     @staticmethod
-    def get_secret(secret_name, default_value=None):
+    def get_secret(secret_name: str, default_value=None):
+        secret_name = AzureKeyVaultService.sanitize_name(secret_name)
         credential = AzureKeyVaultService.get_credential()
         client = SecretClient(vault_url=VAULT_URL, credential=credential)
         try:
@@ -28,7 +36,8 @@ class AzureKeyVaultService:
             return default_value
 
     @staticmethod
-    def update_secret(name, value):
+    def update_secret(name: str, value: str):
+        name = AzureKeyVaultService.sanitize_name(name)
         credential = AzureKeyVaultService.get_credential()
         client = SecretClient(vault_url=VAULT_URL, credential=credential)
 
@@ -38,13 +47,3 @@ class AzureKeyVaultService:
 
         print(f"Success! Secret '{new_secret.name}' set to new value.")
         print(f"New Version ID: {new_secret.properties.version}")
-
-
-def main():
-    update_secret_name = "TestSecret"
-    update_secret_value = "This is a new value for the secret."
-    AzureKeyVaultService.update_secret(update_secret_name, update_secret_value)
-    print(AzureKeyVaultService.get_secret(update_secret_name))
-
-if __name__ == "__main__":
-    main()
