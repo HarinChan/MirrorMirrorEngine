@@ -234,3 +234,4 @@ publish.zip
 ./penapls_db/*
 
 secrets.txt
+src/app/uploads/*

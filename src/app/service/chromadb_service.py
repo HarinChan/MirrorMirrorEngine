@@ -60,7 +60,8 @@ class ChromaDBService:
             }
 
     def query_documents(self, query_text: str, n_results: int = 5,
-                        where: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                        where: Optional[Dict[str, Any]] = None,
+                        min_similarity: Optional[float] = None) -> Dict[str, Any]:
         """
         Query the ChromaDB collection for similar documents
         
@@ -68,6 +69,7 @@ class ChromaDBService:
             query_text: The text query to search for
             n_results: Number of results to return
             where: Optional metadata filter
+            min_similarity: Optional minimum similarity score required to include a result
         
         Returns:
             Dictionary with query results
@@ -83,12 +85,17 @@ class ChromaDBService:
             # Format results
             formatted_results = []
             for i in range(len(results['ids'][0])):
+                distance = results['distances'][0][i]
+                similarity = 1 - distance  # Convert distance to similarity
+                if min_similarity is not None and similarity < min_similarity:
+                    continue
+
                 formatted_results.append({
                     "id": results['ids'][0][i],
                     "document": results['documents'][0][i],
                     "metadata": results['metadatas'][0][i],
-                    "distance": results['distances'][0][i],
-                    "similarity": 1 - results['distances'][0][i]  # Convert distance to similarity
+                    "distance": distance,
+                    "similarity": similarity  # Convert distance to similarity
                 })
             return {
                 "status": "success",
