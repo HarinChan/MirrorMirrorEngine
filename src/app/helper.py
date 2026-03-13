@@ -3,8 +3,8 @@ import re
 import os
 from typing import List, Dict, Optional
 from datetime import datetime, timezone
-from service.azure_keyvault_service import AzureKeyVaultService
-from config import Config
+from .service.azure_keyvault_service import AzureKeyVaultService
+from .config import Config
 
 
 class PenpalsHelper:

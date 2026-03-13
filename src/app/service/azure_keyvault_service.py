@@ -13,6 +13,8 @@ class AzureKeyVaultService:
     If Azure Key Vault credentials are not set, it will log a warning and return default values for secrets and will not throw any warnings.
     """
 
+    static_credential = None
+
     def sanitize_name(name: str) -> str:
         name = re.sub(r'[_ ]', '-', name)
         name = re.sub(r'[^a-zA-Z0-9-]', '', name)
@@ -21,13 +23,11 @@ class AzureKeyVaultService:
 
     def get_credential():
         from ..config import Config
+        if AzureKeyVaultService.static_credential != None:
+            return AzureKeyVaultService.static_credential
         tenant_id=Config.get_variable("KEYVAULT_TENANT_ID","",True)
         client_id=Config.get_variable("KEYVAULT_CLIENT_ID","",True)
         client_secret=Config.get_variable("KEYVAULT_CLIENT_SECRET","",True)
-
-        print(tenant_id)
-        print(client_id)
-        print(client_secret)
 
         if not (tenant_id == "" or client_id=="" or client_secret==""):
             credential = ClientSecretCredential(
@@ -40,6 +40,7 @@ class AzureKeyVaultService:
         try:
             # Test if we can get a token (this will throw an error if credentials are not set)
             credential.get_token("https://vault.azure.net/.default")
+            AzureKeyVaultService.static_credential = credential
             return credential
         except Exception as e:
             print(f"WARNING: Azure Key Vault credentials not fully set. Secrets will not be accessible. {e}")

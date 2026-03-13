@@ -9,9 +9,17 @@ class Config:
     """
     Add any additional configuration variables to the  `settings` dictionary.
     """
-    settings = {}
+    settings = {
+        "dashboard_view_keys_whitelist": [ # must not include itself
+
+        ],
+        "dashboard_set_keys_whitelist": [  # must not include itself
+
+        ]
+    }
+
     @staticmethod
-    def set_variable(name: str, value: str):
+    def set_variable(name: str, value: str, ignore_azure: bool=False):
         """
             Set an environment variable (for testing or dynamic config)
             Set for the following only:
@@ -20,8 +28,9 @@ class Config:
             Does not alter environmental variable.
         """
         
-        settings[name] = value
-        azkv_service.update_secret(name,value)
+        Config.settings[name] = value
+        if not ignore_azure:
+            azkv_service.update_secret(name,value)
 
     @staticmethod
     def get_variable(name:str, default=None, ignore_azure: bool=False) -> str:
@@ -38,11 +47,13 @@ class Config:
         variable = os.getenv(name, None)
         if variable:
             return variable
-        if name in settings:
-            return settings[name]
+        if name in Config.settings:
+            return Config.settings[name]
         if not ignore_azure:
             if azkv_service.get_credential() is not None:
                 variable = azkv_service.get_secret(name, None)
                 if variable:
                     return variable
+        if default is not None:
+            return default
         raise EnvironmentError(f"Missing required environment variable: '{name}'")
