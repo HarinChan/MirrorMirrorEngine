@@ -13,8 +13,15 @@ from .model.friendrequest import FriendRequest
 from .model.relation import Relation
 
 #from models import FriendRequest, Relation
-from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
+import bcrypt
+import hashlib
+
+CLIENT_HASH_SALT = 'penpals-client-salt'
+
+def client_hash(password: str) -> str:
+    data = f"{CLIENT_HASH_SALT}:{password}".encode()
+    return hashlib.sha256(data).hexdigest()
 
 def init_db():
     with application.app_context():
@@ -24,7 +31,7 @@ def init_db():
         print("Database tables re-created successfully!")
 
         # 1. Create a default account for "Me"
-        me_password = generate_password_hash("Metest123!")
+        me_password = bcrypt.hashpw(client_hash("Metest123!").encode(), bcrypt.gensalt(10)).decode()
         me_account = Account(email="me@penpals.com", password_hash=me_password, organization="My School")
         db.session.add(me_account)
         db.session.commit()
@@ -34,7 +41,7 @@ def init_db():
             account_id=me_account.id,
             name="My Classroom",
             location="London, UK",
-            lattitude="51.5074",
+            latitude="51.5074",
             longitude="-0.1278",
             class_size=25,
             availability={"Mon": [9, 10, 11], "Wed": [14, 15]},
@@ -72,7 +79,7 @@ def init_db():
           { "name": 'TechHub Singapore', "location": 'Singapore', "lon": 103.8198, "lat": 1.3521, "interests": ['Computer Science', 'Robotics', 'Math'], "availability": { "Mon": [10, 11, 12, 13], "Tue": [10, 11, 12], "Wed": [14, 15, 16], "Thu": [10, 11, 12], "Fri": [14, 15] } },
           { "name": "Priya's Practice Room", "location": 'Mumbai, India', "lon": 72.8777, "lat": 19.0760, "interests": ['Hindi', 'Music', 'Dance', 'Math'], "availability": { "Mon": [15, 16, 17], "Tue": [15, 16, 17], "Wed": [9, 10, 11], "Thu": [15, 16, 17], "Fri": [9, 10, 11] } },
           { "name": 'Samba Study Circle', "location": 'São Paulo, Brazil', "lon": -46.6333, "lat": -23.5505, "interests": ['Portuguese', 'Music', 'Dance', 'Biology'], "availability": { "Mon": [11, 12, 13], "Tue": [11, 12, 13, 14], "Wed": [16, 17, 18], "Thu": [11, 12, 13], "Fri": [16, 17] } },
-          { "name": 'Alpine Academic Circle', "location": 'Gstaad, Switzerland', "lon": 46.4722, "lat": 7.2869, "interests": ['German', 'Chemistry', 'Physics', 'Hiking'], "availability": { "Mon": [8, 9, 10, 11], "Tue": [14, 15, 16], "Wed": [8, 9, 10], "Thu": [14, 15, 16], "Fri": [8, 9, 10] } },
+          { "name": 'Alpine Academic Circle', "location": 'Gstaad, Switzerland', "lon": 7.2869, "lat": 46.4722, "interests": ['German', 'Chemistry', 'Physics', 'Hiking'], "availability": { "Mon": [8, 9, 10, 11], "Tue": [14, 15, 16], "Wed": [8, 9, 10], "Thu": [14, 15, 16], "Fri": [8, 9, 10] } },
           { "name": 'The Knit & Wit', "location": 'Stockholm, Sweden', "lon": 18.0686, "lat": 59.3293, "interests": ['Knitting', 'Crafts', 'Design', 'Swedish'], "availability": { "Mon": [13, 14, 15], "Tue": [9, 10, 11], "Wed": [13, 14, 15], "Thu": [9, 10, 11], "Fri": [13, 14, 15] } },
           { "name": 'Seoul Study Station', "location": 'Seoul, South Korea', "lon": 126.9780, "lat": 37.5665, "interests": ['Korean', 'K-Pop', 'Art', 'Math'], "availability": { "Mon": [16, 17, 18], "Tue": [10, 11, 12], "Wed": [16, 17, 18], "Thu": [10, 11, 12], "Fri": [16, 17] } },
         ]
@@ -81,7 +88,7 @@ def init_db():
         for c in classrooms_data:
             # Create a dummy account for each classroom
             email = f"{c['name'].replace(' ', '').lower()}@penpals.com"
-            pwd = generate_password_hash("Test1234!")
+            pwd = bcrypt.hashpw(client_hash("Test1234!").encode(), bcrypt.gensalt(10)).decode()
             account = Account(email=email, password_hash=pwd, organization="Global School")
             db.session.add(account)
             db.session.commit()
@@ -90,7 +97,7 @@ def init_db():
                 account_id=account.id,
                 name=c['name'],
                 location=c['location'],
-                lattitude=str(c['lat']),
+                latitude=str(c['lat']),
                 longitude=str(c['lon']),
                 class_size=20,
                 availability=c['availability'],
@@ -140,11 +147,10 @@ def init_db():
         )
         db.session.add(p1)
         
-        # Post 2 - Image
+        # Post 2
         p2 = Post(
             profile_id=lee.id,
             content="Our science fair projects are finally done! The students worked so hard on their volcanoes. 🌋",
-            image_url="https://images.unsplash.com/photo-1596495578065-6e0763fa1178?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
             likes=45,
             comments_count=5,
             created_at=datetime.utcnow() - timedelta(hours=5)

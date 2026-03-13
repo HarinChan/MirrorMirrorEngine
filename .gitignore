@@ -1,6 +1,7 @@
 # build cache
 chroma_db/
 penpals_db/
+models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -233,3 +234,4 @@ publish.zip
 ./penapls_db/*
 
 secrets.txt
+src/app/uploads/*
