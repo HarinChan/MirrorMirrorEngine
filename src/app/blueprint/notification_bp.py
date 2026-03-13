@@ -1,11 +1,43 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import desc
 
 from ..model import db
 from ..model.account import Account
 from ..model.notification import Notification
 
 notification_bp = Blueprint('notification', __name__)
+
+
+@notification_bp.route('/api/notifications', methods=['GET'])
+@jwt_required()
+def get_notifications():
+    """Get all notifications for current user (lightweight endpoint for polling)"""
+    try:
+        current_user_id = get_jwt_identity()
+        account = Account.query.get(current_user_id)
+        
+        if not account:
+            return jsonify({"msg": "User not found"}), 404
+        
+        # Get notifications ordered by newest first
+        notifications = []
+        for notif in account.notifications.order_by(desc(Notification.created_at)).all():
+            notifications.append({
+                "id": notif.id,
+                "title": notif.title,
+                "message": notif.message,
+                "type": notif.type,
+                "read": notif.read,
+                "timestamp": notif.created_at.isoformat(),
+                "related_id": notif.related_id
+            })
+        
+        return jsonify({"notifications": notifications}), 200
+    
+    except Exception as e:
+        return jsonify({"msg": "Internal server error", "error": str(e)}), 500
+
 
 @notification_bp.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
 @jwt_required()
