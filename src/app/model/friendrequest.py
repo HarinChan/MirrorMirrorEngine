@@ -9,7 +9,7 @@ class FriendRequest(db.Model):
     sender_profile_id = db.Column(db.Integer, db.ForeignKey('profiles.id'), nullable=False)
     receiver_profile_id = db.Column(db.Integer, db.ForeignKey('profiles.id'), nullable=False)
     status = db.Column(db.String(20), default='pending') # pending, accepted, rejected
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
     sender = db.relationship('Profile', foreign_keys=[sender_profile_id], backref=db.backref('sent_requests', cascade='all, delete-orphan'))

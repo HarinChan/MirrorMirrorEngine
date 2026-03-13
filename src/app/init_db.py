@@ -147,11 +147,10 @@ def init_db():
         )
         db.session.add(p1)
         
-        # Post 2 - Image
+        # Post 2
         p2 = Post(
             profile_id=lee.id,
             content="Our science fair projects are finally done! The students worked so hard on their volcanoes. 🌋",
-            image_url="https://images.unsplash.com/photo-1596495578065-6e0763fa1178?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
             likes=45,
             comments_count=5,
             created_at=datetime.utcnow() - timedelta(hours=5)
