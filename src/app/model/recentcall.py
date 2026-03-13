@@ -13,11 +13,11 @@ class RecentCall(db.Model):
     target_classroom_id = db.Column(db.String(50), nullable=True) # ID as string for flexibility
     
     duration_seconds = db.Column(db.Integer, default=0)
-    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     call_type = db.Column(db.String(20)) # outgoing, incoming
     
     # Relationships
-    caller_profile = db.relationship('Profile', foreign_keys=[caller_profile_id], backref='call_history')
+    caller_profile = db.relationship('Profile', foreign_keys=[caller_profile_id], backref=db.backref('call_history', cascade='all, delete-orphan'))
 
     def __repr__(self):
         return f'<RecentCall {self.caller_profile_id} -> {self.target_classroom_name}>'

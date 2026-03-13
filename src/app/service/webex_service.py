@@ -117,7 +117,7 @@ class WebexService:
             print(f"Error deleting WebEx meeting: {e}")
             raise e
 
-    def update_meeting(self, access_token, meeting_id, start_time: datetime, end_time: datetime):
+    def update_meeting(self, access_token, meeting_id, start_time: datetime, end_time: datetime, title: str = None):
         """
         Update a WebEx meeting (reschedule).
         """
@@ -130,6 +130,9 @@ class WebexService:
             "start": start_time.strftime('%Y-%m-%dT%H:%M:%S'),
             "end": end_time.strftime('%Y-%m-%dT%H:%M:%S')
         }
+
+        if title:
+            payload["title"] = title
         
         headers = {
             "Authorization": f"Bearer {access_token}",
