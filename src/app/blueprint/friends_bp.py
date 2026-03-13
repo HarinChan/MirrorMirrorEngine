@@ -28,7 +28,7 @@ def send_friend_request():
         if not data:
             return jsonify({"msg": "Request body is required"}), 400
         
-        target_profile_id = data.get('profileId')
+        target_profile_id = data.get('profileId') or data.get('classroomId')
         
         if not target_profile_id:
             return jsonify({"msg": "Target profile ID is required"}), 400
