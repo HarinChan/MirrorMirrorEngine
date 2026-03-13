@@ -239,6 +239,8 @@ def get_current_user():
             "latitude": classroom.latitude,
             "longitude": classroom.longitude,
             "class_size": classroom.class_size,
+            "description": classroom.description,
+            "avatar": classroom.avatar,
             "interests": classroom.interests,
             "availability": classroom.availability, 
             "friends": friends,
