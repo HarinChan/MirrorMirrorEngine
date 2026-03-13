@@ -35,6 +35,7 @@ from .blueprint.profile_bp import profile_bp
 from .blueprint.webex_bp import webex_bp
 
 from .helper import PenpalsHelper as helper
+from .config import Config
 
 def print_tables():
     with application.app_context():
@@ -47,12 +48,12 @@ print_tables()
 # Respect reverse-proxy headers (e.g., X-Forwarded-Proto) in deployed environments.
 application.wsgi_app = ProxyFix(application.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
-application.config['SECRET_KEY'] = helper.get_env_variable('FLASK_SECRET_KEY')
-application.config['JWT_SECRET_KEY'] = helper.get_env_variable('JWT_SECRET_KEY')
+application.config['SECRET_KEY'] = Config.get_variable('FLASK_SECRET_KEY')
+application.config['JWT_SECRET_KEY'] = Config.get_variable('JWT_SECRET_KEY')
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-application.config['PREFERRED_URL_SCHEME'] = helper.get_env_variable('PREFERRED_URL_SCHEME', 'http')
+application.config['PREFERRED_URL_SCHEME'] = Config.get_variable('PREFERRED_URL_SCHEME', 'http')
 
-db_uri = helper.get_env_variable('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
+db_uri = Config.get_variable('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
 if db_uri.startswith('sqlite:///') and not db_uri.startswith('sqlite:////'):
     rel_path = db_uri.replace('sqlite:///', '', 1)
     # Ensure the directory exists

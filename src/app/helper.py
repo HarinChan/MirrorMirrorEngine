@@ -4,32 +4,16 @@ import os
 from typing import List, Dict, Optional
 from datetime import datetime, timezone
 from service.azure_keyvault_service import AzureKeyVaultService
+from config import Config
 
 
 class PenpalsHelper:
     """Static helper class for PenPals application utilities"""
     
+    # depreciate this method asap
     @staticmethod
     def get_env_variable(var_name: str, default: str = None) -> str:
-        """
-            Get the environment variable.
-            Try to retrieve environmental variables in the following order:
-            - OS Environment
-            - Config Files (if implemented in the future)
-            - Azure Key Vault
-            Returns the default value if the variable is not found in any source and default is provided.
-            Raises an error if the variable is required but not found and no default is provided
-        """
-        try:
-            return os.environ[var_name]
-        except KeyError:
-            try:
-                value = AzureKeyVaultService.get_secret(var_name)
-                if value is not None:
-                    return value
-                if default is not None:
-                    return default
-                raise EnvironmentError(f"Missing required environment variable: '{var_name}'")       
+        return Config.get_variable(var_name, default)      
 
     @staticmethod
     def find_open_port(start_port: int = 5000, end_port: int = 6000) -> int:
