@@ -120,6 +120,7 @@ class PenpalsHelper:
         response = {
             "id": classroom.id,
             "name": classroom.name,
+            "description": classroom.description,
             "avatar": classroom.avatar,
             "location": classroom.location,
             "latitude": classroom.latitude,  

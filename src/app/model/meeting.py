@@ -31,7 +31,7 @@ class Meeting(db.Model):
     creator_id = db.Column(db.Integer, db.ForeignKey('profiles.id'), nullable=False)
     
     # Relationships
-    creator = db.relationship('Profile', foreign_keys=[creator_id], backref='created_meetings')
+    creator = db.relationship('Profile', foreign_keys=[creator_id], backref=db.backref('created_meetings', cascade='all, delete-orphan'))
     participants = db.relationship('Profile', secondary=meeting_participants, lazy='subquery',
         backref=db.backref('meetings', lazy=True))
     

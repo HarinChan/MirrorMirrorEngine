@@ -17,7 +17,7 @@ class RecentCall(db.Model):
     call_type = db.Column(db.String(20)) # outgoing, incoming
     
     # Relationships
-    caller_profile = db.relationship('Profile', foreign_keys=[caller_profile_id], backref='call_history')
+    caller_profile = db.relationship('Profile', foreign_keys=[caller_profile_id], backref=db.backref('call_history', cascade='all, delete-orphan'))
 
     def __repr__(self):
         return f'<RecentCall {self.caller_profile_id} -> {self.target_classroom_name}>'

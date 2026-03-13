@@ -12,8 +12,8 @@ class FriendRequest(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     # Relationships
-    sender = db.relationship('Profile', foreign_keys=[sender_profile_id], backref='sent_requests')
-    receiver = db.relationship('Profile', foreign_keys=[receiver_profile_id], backref='received_requests')
+    sender = db.relationship('Profile', foreign_keys=[sender_profile_id], backref=db.backref('sent_requests', cascade='all, delete-orphan'))
+    receiver = db.relationship('Profile', foreign_keys=[receiver_profile_id], backref=db.backref('received_requests', cascade='all, delete-orphan'))
 
     def __repr__(self):
         return f'<FriendRequest {self.sender_profile_id} -> {self.receiver_profile_id}>'

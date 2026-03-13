@@ -17,7 +17,7 @@ class Post(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     # Relationships
-    profile = db.relationship('Profile', backref='posts')
+    profile = db.relationship('Profile', backref=db.backref('posts', cascade='all, delete-orphan'))
     liked_by = db.relationship('Account', secondary=post_likes, lazy='subquery',
         backref=db.backref('liked_posts', lazy=True))
     
