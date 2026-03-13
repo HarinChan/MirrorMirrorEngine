@@ -89,8 +89,10 @@ def test_format_profile_response_without_friends():
     classroom = SimpleNamespace(
         id=1,
         name="Year 2A",
+        description="Class description",
+        avatar="https://example.com/avatar.png",
         location="London",
-        lattitude=51.5,
+        latitude=51.5,
         longitude=-0.12,
         class_size=30,
         availability=[{"day": "monday", "time": "09:00-11:00"}],
@@ -103,6 +105,8 @@ def test_format_profile_response_without_friends():
 
     assert response["id"] == 1
     assert response["name"] == "Year 2A"
+    assert response["description"] == "Class description"
+    assert response["avatar"] == "https://example.com/avatar.png"
     assert response["location"] == "London"
     assert response["latitude"] == 51.5
     assert response["longitude"] == -0.12
@@ -128,8 +132,10 @@ def test_format_profile_response_with_friends():
     classroom = SimpleNamespace(
         id=1,
         name="Year 2A",
+        description="Class description",
+        avatar="https://example.com/avatar.png",
         location="London",
-        lattitude=51.5,
+        latitude=51.5,
         longitude=-0.12,
         class_size=30,
         availability=[],
@@ -156,8 +162,10 @@ def test_format_profile_response_handles_missing_account():
     classroom = SimpleNamespace(
         id=2,
         name="No Account Class",
+        description=None,
+        avatar=None,
         location="Berlin",
-        lattitude=52.52,
+        latitude=52.52,
         longitude=13.405,
         class_size=25,
         availability=[],
