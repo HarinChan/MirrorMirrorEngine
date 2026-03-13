@@ -10,7 +10,18 @@ def test_create_post_persists_post_and_returns_payload(client, auth_token, creat
 
     response = client.post(
         "/api/posts",
-        json={"content": "Hello from integration test", "imageUrl": "https://example.com/img.png"},
+        json={
+            "content": "Hello from integration test",
+            "attachments": [
+                {
+                    "filename": "img.png",
+                    "mimeType": "image/png",
+                    "sizeBytes": 123,
+                    "storageKey": "1/test-img.png",
+                    "url": "https://example.com/img.png",
+                }
+            ],
+        },
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
     )
 
@@ -24,7 +35,9 @@ def test_create_post_persists_post_and_returns_payload(client, auth_token, creat
     assert post is not None
     assert post.profile_id == profile.id
     assert post.content == "Hello from integration test"
-    assert post.image_url == "https://example.com/img.png"
+    assert len(post.attachments) == 1
+    assert post.attachments[0].original_filename == "img.png"
+    assert post.attachments[0].storage_key == "1/test-img.png"
 
 
 @pytest.mark.integration
