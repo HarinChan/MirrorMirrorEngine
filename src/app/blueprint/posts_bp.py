@@ -399,7 +399,21 @@ def delete_post(post_id):
     except Exception as e:
         current_app.logger.warning("Failed to remove post from ChromaDB: %s", e)
 
+    # Collect attachment file paths before deleting DB rows.
+    attachment_file_paths = []
+    for attachment in post.attachments:
+        abs_path = _safe_storage_path(attachment.storage_key)
+        if abs_path:
+            attachment_file_paths.append(abs_path)
+
     db.session.delete(post)
     db.session.commit()
+
+    for abs_path in attachment_file_paths:
+        try:
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
+        except OSError as e:
+            current_app.logger.warning("Failed to delete attachment file %s: %s", abs_path, e)
 
     return jsonify({"msg": "Post deleted"}), 200
