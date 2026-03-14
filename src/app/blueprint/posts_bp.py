@@ -16,6 +16,8 @@ from ..model.post_attachment import PostAttachment
 
 from ..service.chromadb_service import ChromaDBService
 
+from ..config import Config
+
 post_bp = Blueprint('post', __name__)
 
 chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="penpals_documents")
@@ -61,13 +63,13 @@ def _uploaded_file_size(file_storage):
 def _build_attachment_file_url(storage_key):
     relative_url = url_for('post.get_post_attachment_file', storage_key=storage_key, _external=False)
 
-    public_api_base_url = (os.getenv('PUBLIC_API_BASE_URL') or '').strip().rstrip('/')
+    public_api_base_url = (Config.get_variable('PUBLIC_API_BASE_URL','')).strip().rstrip('/')
     if public_api_base_url:
         return f"{public_api_base_url}{relative_url}"
 
     # Respect explicit env override; otherwise infer from the current request.
-    force_https_env = os.getenv('FORCE_HTTPS_ATTACHMENT_URLS')
-    if force_https_env is None:
+    force_https_env = Config.get_variable('FORCE_HTTPS_ATTACHMENT_URLS','') # will not throw if missing
+    if force_https_env == '':
         force_https = bool(request.is_secure)
     else:
         force_https = (force_https_env or '').strip().lower() in {'1', 'true', 'yes', 'on'}
