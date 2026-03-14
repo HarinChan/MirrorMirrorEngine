@@ -10,13 +10,41 @@ class Config:
     Add any additional configuration variables to the  `settings` dictionary.
     """
     settings = {
-        "dashboard_view_keys_whitelist": [ # must not include itself
+        "safe_get_keys_whitelist": [ # must not include itself
 
         ],
-        "dashboard_set_keys_whitelist": [  # must not include itself
+        "safe_set_keys_whitelist": [  # must not include itself
 
         ]
     }
+
+    @staticmethod
+    def get_all_safe_variables() -> dict:
+        """
+            Get all variables in the safe get whitelist with their values.
+        """
+        return {key: Config.get_variable(key, "") for key in Config.settings["safe_get_keys_whitelist"]}
+
+    @staticmethod
+    def safe_get_variable(name:str, default=None, ignore_azure: bool=False) -> str:
+        """
+            A safe version of get_variable that returns None instead of throwing an error if the variable is not found.
+        """
+        if name not in Config.settings["safe_get_keys_whitelist"]:
+            print(f"Attempted to access variable '{name}' which is not in the safe get whitelist. Returning default value.")
+            return default
+        return Config.get_variable(name, default, ignore_azure)
+
+    @staticmethod
+    def safe_set_variable(name: str, value: str, ignore_azure: bool=False) -> bool:
+        """
+            A safe version of set_variable that only allows setting variables in the whitelist and does not throw an error if the variable is not in the whitelist.
+        """
+        if name not in Config.settings["safe_set_keys_whitelist"]:
+            print(f"Attempted to set variable '{name}' which is not in the safe set whitelist. Ignoring.")
+            return False
+        Config.set_variable(name, value, ignore_azure)
+        return True
 
     @staticmethod
     def set_variable(name: str, value: str, ignore_azure: bool=False):
@@ -37,9 +65,9 @@ class Config:
         """
             Get the environment variable.
             Try to retrieve environmental variables in the following order:
-            - OS Environment
-            - Config Files (if implemented in the future)
-            - Azure Key Vault
+            1. OS Environment
+            2. Config
+            3. Azure Key Vault (if not ignored and credentials are set)
             Returns the default value if the variable is not found in any source and default is provided.
             Raises an error if the variable is required but not found and no default is provided
         """

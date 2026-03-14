@@ -14,17 +14,31 @@ class AzureKeyVaultService:
     """
 
     static_credential = None
+    get_credentials_attempt = 0
+    max_credential_attempts = None
 
+    @staticmethod
     def sanitize_name(name: str) -> str:
         name = re.sub(r'[_ ]', '-', name)
         name = re.sub(r'[^a-zA-Z0-9-]', '', name)
         name = name.strip('-')
         return name
 
+    @staticmethod
     def get_credential():
         from ..config import Config
+
+        # default credentials fetching
         if AzureKeyVaultService.static_credential != None:
             return AzureKeyVaultService.static_credential
+        if AzureKeyVaultService.max_credential_attempts is None:
+            AzureKeyVaultService.max_credential_attempts = Config.get_variable("KEYVAULT_MAX_CREDENTIAL_ATTEMPTS", 3, True)
+        if AzureKeyVaultService.get_credentials_attempt >= AzureKeyVaultService.max_credential_attempts:
+            print("WARNING: Maximum attempts to get Azure Key Vault credentials reached. Returning None.")
+            return None
+        AzureKeyVaultService.get_credentials_attempt += 1
+
+        # can attempt to fetch
         tenant_id=Config.get_variable("KEYVAULT_TENANT_ID","",True)
         client_id=Config.get_variable("KEYVAULT_CLIENT_ID","",True)
         client_secret=Config.get_variable("KEYVAULT_CLIENT_SECRET","",True)
@@ -43,7 +57,7 @@ class AzureKeyVaultService:
             AzureKeyVaultService.static_credential = credential
             return credential
         except Exception as e:
-            print(f"WARNING: Azure Key Vault credentials not fully set. Secrets will not be accessible. {e}")
+            print(f"WARNING: Azure Key Vault credentials not fully set. Secrets will not be accessible.")
             return None
 
     @staticmethod
@@ -59,7 +73,7 @@ class AzureKeyVaultService:
             retrieved_secret = client.get_secret(secret_name)
             return retrieved_secret.value
         except Exception as e:
-            print(f"Failed to fetch secret: {e}")
+            print(f"Failed to fetch secret '{secret_name}'. Returning default value {default_value}.")
             return default_value
 
     @staticmethod
