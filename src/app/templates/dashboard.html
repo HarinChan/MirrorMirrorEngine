@@ -56,11 +56,15 @@
                     <p class="text-muted small">Update Configuration Settings.</p>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Key</label>
-                        <input type="text" id="configKey" class="form-control" list="keyWhitelist" placeholder="Select or type a key...">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                            <input type="text" id="configKey" class="form-control" list="keyWhitelist" placeholder="Search or select a key...">
+                        </div>
                         <datalist id="keyWhitelist">
                             </datalist>
+                            
                         <div class="form-text text-muted" style="font-size: 0.75rem;">
-                            Only keys in the whitelist can be modified.
+                            Only keys in the <strong>safe_set_keys_whitelist</strong> can be modified.
                         </div>
                     </div>
                     <div class="mb-3">
@@ -317,7 +321,7 @@
     // 2. Fetch and Render Current Variables
     async function fetchData() {
         const listContainer = document.getElementById('configList');
-        const dataList = document.getElementById('keyWhitelist');
+        const comboDataList = document.getElementById('keyWhitelist');
         
         try {
             const response = await fetch('/api/config', {
@@ -329,11 +333,18 @@
 
             const data = await response.json();
             
-            // 1. Populate the Combo Box (Datalist)
+            // 1. Populate the Combo Box (Datalist) from the SET whitelist
+            // 1. Populate the Datalist
             if (data.safe_set_keys_whitelist) {
-                dataList.innerHTML = data.safe_set_keys_whitelist
-                    .map(key => `<option value="${key}">`)
-                    .join('');
+                // Clear existing options
+                comboDataList.innerHTML = ''; 
+                
+                data.safe_set_keys_whitelist.forEach(key => {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    comboDataList.appendChild(option);
+                });
+                console.log("Datalist populated with:", data.safe_set_keys_whitelist);
             }
 
             // 2. Render the Current Variables List

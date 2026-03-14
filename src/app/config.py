@@ -43,7 +43,11 @@ class Config:
         """
             Get all variables in the safe get whitelist with their values.
         """
-        return {key: Config.get_variable(key, "") for key in Config.settings["safe_get_keys_whitelist"]}
+        safe_vars = {}
+        for key in Config.settings["safe_get_keys_whitelist"]:
+            if Config.get_variable(key, "") != "":
+                safe_vars[key] = Config.get_variable(key, "")
+        return safe_vars
 
     @staticmethod
     def safe_get_variable(name:str, default=None, ignore_azure: bool=False) -> str:

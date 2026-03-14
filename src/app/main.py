@@ -368,7 +368,6 @@ def admin_config_status():
 
 
     status = {
-        "safe_get_keys_whitelist": Config.settings["safe_get_keys_whitelist"], # list[str]
         "safe_set_keys_whitelist": Config.settings["safe_set_keys_whitelist"], # list[str]
         "current_safe_variables": Config.get_all_safe_variables() # dictionary{str:str}
     }
