@@ -60,6 +60,11 @@ application.config['JWT_SECRET_KEY'] = Config.get_variable('JWT_SECRET_KEY',"TES
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 application.config['PREFERRED_URL_SCHEME'] = Config.get_variable('PREFERRED_URL_SCHEME', 'http')
 
+def refresh_config():
+    application.config['SECRET_KEY'] = Config.get_variable('FLASK_SECRET_KEY',"TEST_FLASK_KEY")
+    application.config['JWT_SECRET_KEY'] = Config.get_variable('JWT_SECRET_KEY',"TEST_JWT_KEY")
+    application.config['PREFERRED_URL_SCHEME'] = Config.get_variable('PREFERRED_URL_SCHEME', 'http')
+
 db_uri = Config.get_variable('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
 if db_uri.startswith('sqlite:///') and not db_uri.startswith('sqlite:////'):
     rel_path = db_uri.replace('sqlite:///', '', 1)
@@ -382,7 +387,14 @@ def admin_config_update():
     key = data.get("key")
     value = data.get("value")
     ignore_azure = data.get("ignoreAzure", False)
-    Config.safe_set_variable(key, value, ignore_azure=ignore_azure)
+    success = Config.safe_set_variable(key, value, ignore_azure=ignore_azure)
+    if not success:
+        return jsonify({"msg": f"Failed to update variable '{key}'. It may not be in the safe set whitelist."}), 400
+    
+    # refresh all config
+    refresh_config()
+    webex_service.refresh_config()
+
     return jsonify({"msg": "Configuration updated successfully"}), 200
 
 if __name__ == '__main__':
