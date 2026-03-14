@@ -34,7 +34,7 @@ def app():
     test_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     test_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     test_app.config['SECRET_KEY'] = 'test-secret-key'
-    test_app.config['JWT_SECRET_KEY'] = 'test-jwt-secret-key'
+    test_app.config['JWT_SECRET_KEY'] = 'test-jwt-secret-key-32-bytes-min'
     test_app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
     
     # Initialize extensions
