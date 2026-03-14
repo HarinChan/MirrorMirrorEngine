@@ -92,11 +92,12 @@ class HealthCheckService:
             total_latency += entry["latency_ms"]
     
         status = "healthy"
+        average_latency = total_latency / len(self.latency_history) if self.latency_history else 0
         if any(entry["latency_ms"] > self.latency_threshold_ms for entry in self.latency_history):
             status = "unhealthy"
         elif average_latency > self.latency_threshold_ms:
             status = "degraded"
-        average_latency = total_latency / len(self.latency_history) if self.latency_history else 0
+        
     
         return {
             "status": status,
