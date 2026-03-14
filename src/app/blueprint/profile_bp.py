@@ -20,6 +20,7 @@ chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_nam
 
 
 @profile_bp.route('/api/profiles', methods=['POST'])
+@profile_bp.route('/api/classrooms', methods=['POST'])
 @jwt_required()
 def create_profile():
     """Create a new profile for the current account"""
@@ -66,12 +67,16 @@ def create_profile():
                     return jsonify({"msg": "Class size must be between 1 and 100"}), 400
             except (ValueError, TypeError):
                 return jsonify({"msg": "Invalid class size"}), 400
+            
+        # Avatar
+        avatar = data.get('avatar')
         
         profile = Profile()
-        profile.account_id = account_id
+        profile.account_id = account.id
         profile.name = name
+        profile.description = data.get('description')
         profile.location = data.get('location', '').strip() or None
-        profile.lattitude = latitude
+        profile.latitude = latitude
         profile.longitude = longitude
         profile.class_size = class_size
         profile.availability = availability
@@ -102,7 +107,7 @@ def create_profile():
         
         return jsonify({
             "msg": "Profile created successfully",
-            "profile": profile_data
+            "classroom": profile_data
         }), 201
     
     except Exception as e:
@@ -111,6 +116,7 @@ def create_profile():
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>', methods=['GET'])
+@profile_bp.route('/api/classrooms/<int:profile_id>', methods=['GET'])
 @jwt_required()
 def get_profile(profile_id):
     """Get profile details with friends"""
@@ -129,6 +135,7 @@ def get_profile(profile_id):
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>', methods=['PUT'])
+@profile_bp.route('/api/classrooms/<int:profile_id>', methods=['PUT'])
 @jwt_required()
 def update_profile(profile_id):
     """Update profile information (only owner can update)"""
@@ -156,17 +163,23 @@ def update_profile(profile_id):
             if len(name) > 100:
                 return jsonify({"msg": "Profile name too long (max 100 characters)"}), 400
             profile.name = name
+
+        if 'description' in data:
+            profile.description = data['description']
+
+        if 'avatar' in data:
+            profile.avatar = data['avatar']
         
         if 'location' in data:
             location = data['location']
             profile.location = location.strip() if location else None
         
         if 'latitude' in data or 'longitude' in data:
-            new_lat = data.get('latitude', profile.lattitude)
+            new_lat = data.get('latitude', profile.latitude)
             new_lng = data.get('longitude', profile.longitude)
             if not PenpalsHelper.validate_coordinates(new_lat, new_lng):
                 return jsonify({"msg": "Invalid coordinates"}), 400
-            profile.lattitude = new_lat
+            profile.latitude = new_lat
             profile.longitude = new_lng
         
         if 'class_size' in data:
@@ -228,6 +241,7 @@ def update_profile(profile_id):
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>', methods=['DELETE'])
+@profile_bp.route('/api/classrooms/<int:profile_id>', methods=['DELETE'])
 @jwt_required()
 def delete_profile(profile_id):
     """Delete profile (only owner can delete)"""
@@ -264,6 +278,7 @@ def delete_profile(profile_id):
 
 
 @profile_bp.route('/api/profiles/search', methods=['POST'])
+@profile_bp.route('/api/classrooms/search', methods=['POST'])
 @jwt_required()
 def search_profiles():
     """Search for profiles by interests using semantic search"""
@@ -327,6 +342,7 @@ def search_profiles():
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>/connect', methods=['POST'])
+@profile_bp.route('/api/classrooms/<int:profile_id>/connect', methods=['POST'])
 @jwt_required()
 def connect_profiles(profile_id):
     """Add a profile as a friend (automatic bidirectional connection)"""
@@ -393,6 +409,7 @@ def connect_profiles(profile_id):
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>/friends', methods=['GET'])
+@profile_bp.route('/api/classrooms/<int:profile_id>/friends', methods=['GET'])
 @jwt_required()
 def get_profile_friends(profile_id):
     """Get all friends for a profile"""
@@ -438,6 +455,7 @@ def get_profile_friends(profile_id):
 
 
 @profile_bp.route('/api/profiles/<int:profile_id>/disconnect', methods=['DELETE'])
+@profile_bp.route('/api/classrooms/<int:profile_id>/disconnect', methods=['DELETE'])
 @jwt_required()
 def disconnect_profiles(profile_id):
     """Remove friendship between profiles"""
@@ -486,6 +504,7 @@ def disconnect_profiles(profile_id):
         return jsonify({"msg": "Internal server error", "error": str(e)}), 500
 
 @profile_bp.route('/api/profiles', methods=['GET'])
+@profile_bp.route('/api/classrooms', methods=['GET'])
 @jwt_required()
 def get_all_classrooms():
     """Get list of all classrooms (public)"""

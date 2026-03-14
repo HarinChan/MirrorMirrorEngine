@@ -8,9 +8,11 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import timedelta
 from sqlalchemy import desc
 import os
+import bcrypt
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -23,13 +25,17 @@ from .model.relation import Relation
 from .model.recentcall import RecentCall
 
 from .blueprint.account_bp import account_bp
+from .blueprint.chat_bp import chat_bp
 from .blueprint.chroma_bp import chroma_bp
 from .blueprint.friends_bp import friends_bp
 from .blueprint.meeting_bp import meeting_bp
+from .blueprint.messaging_bp import messaging_bp
 from .blueprint.notification_bp import notification_bp
 from .blueprint.posts_bp import post_bp
 from .blueprint.profile_bp import profile_bp
 from .blueprint.webex_bp import webex_bp
+
+from .helper import PenpalsHelper as helper
 
 def print_tables():
     with application.app_context():
@@ -39,9 +45,13 @@ application = Flask(__name__)
 CORS(application)
 print_tables()
 
-application.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
-application.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
+# Respect reverse-proxy headers (e.g., X-Forwarded-Proto) in deployed environments.
+application.wsgi_app = ProxyFix(application.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
+application.config['SECRET_KEY'] = helper.get_env_variable('FLASK_SECRET_KEY')
+application.config['JWT_SECRET_KEY'] = helper.get_env_variable('JWT_SECRET_KEY')
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+application.config['PREFERRED_URL_SCHEME'] = os.getenv('PREFERRED_URL_SCHEME', 'http')
 
 db_uri = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
 if db_uri.startswith('sqlite:///') and not db_uri.startswith('sqlite:////'):
@@ -69,9 +79,11 @@ with application.app_context():
 
 # register blue prints for API endpoints
 application.register_blueprint(account_bp)
+application.register_blueprint(chat_bp)
 application.register_blueprint(chroma_bp)
 application.register_blueprint(friends_bp)
 application.register_blueprint(meeting_bp)
+application.register_blueprint(messaging_bp)
 application.register_blueprint(notification_bp)
 application.register_blueprint(post_bp)
 application.register_blueprint(profile_bp)
@@ -94,25 +106,12 @@ def register():
     if not email or not password:
         return jsonify({"msg": "Missing required fields"}), 400
     
-    # Password validation: at least 8 chars, one uppercase, one lowercase, one digit, one special char
-    has_upper = any(c in capital_letters for c in password)
-    has_lower = any(c in lowercase_letters for c in password)
-    has_digit = any(c in digits for c in password)
-    has_special = any(
-        c not in capital_letters and c not in lowercase_letters and c not in digits
-        for c in password
-    )
-    if not (len(password) >= 8 and has_upper and has_lower and has_digit and has_special):
-        return jsonify({
-            "msg": "Password must be at least 8 characters and include one uppercase, one lowercase, one digit, and one special character."
-        }), 400
-    
     # Check if account exists
     if Account.query.filter_by(email=email).first():
         return jsonify({"msg": "Account already exists"}), 409
     
-    # Hash password using werkzeug
-    password_hash = generate_password_hash(password)
+    # Password is a client-side SHA-256 hash; bcrypt it for storage
+    password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(10)).decode()
     
     # Create account (no automatic profile creation)
     account = Account()
@@ -144,7 +143,8 @@ def login():
     
     account = Account.query.filter_by(email=email).first()
     
-    if not account or not check_password_hash(account.password_hash, password):
+    # Password is a client-side SHA-256 hash; bcrypt it and compare
+    if not account or not bcrypt.checkpw(password.encode(), account.password_hash.encode()):
         return jsonify({"msg": "Invalid credentials"}), 401
     
     # Create JWT token with account ID as identity
@@ -185,12 +185,14 @@ def get_current_user():
         # Fetch friends (relations)
         # We look for accepted relations where this classroom is either sender or receiver
         friends = []
+        seen_friend_ids = set()  # Track to avoid duplicates
         
         # Sent accepted requests (my friends)
         sent_relations = Relation.query.filter_by(from_profile_id=classroom.id, status='accepted').all()
         for rel in sent_relations:
             friend_profile = Profile.query.get(rel.to_profile_id)
-            if friend_profile:
+            if friend_profile and friend_profile.id not in seen_friend_ids:
+                seen_friend_ids.add(friend_profile.id)
                 friends.append({
                     "id": str(friend_profile.id),
                     "classroomId": str(friend_profile.id),
@@ -204,7 +206,8 @@ def get_current_user():
         received_relations = Relation.query.filter_by(to_profile_id=classroom.id, status='accepted').all()
         for rel in received_relations:
             friend_profile = Profile.query.get(rel.from_profile_id)
-            if friend_profile:
+            if friend_profile and friend_profile.id not in seen_friend_ids:
+                seen_friend_ids.add(friend_profile.id)
                 friends.append({
                     "id": str(friend_profile.id),
                     "classroomId": str(friend_profile.id),
@@ -243,9 +246,11 @@ def get_current_user():
             "id": classroom.id,
             "name": classroom.name,
             "location": classroom.location,
-            "latitude": classroom.lattitude,
+            "latitude": classroom.latitude,
             "longitude": classroom.longitude,
             "class_size": classroom.class_size,
+            "description": classroom.description,
+            "avatar": classroom.avatar,
             "interests": classroom.interests,
             "availability": classroom.availability, 
             "friends": friends,
