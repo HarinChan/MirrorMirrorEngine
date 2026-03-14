@@ -13,9 +13,14 @@ from datetime import timedelta
 from sqlalchemy import desc
 import os
 import bcrypt
+import json
+import time
+import math
 
 from dotenv import load_dotenv
 load_dotenv()
+
+from .service.health_check_service import HealthCheckService
 
 from .model import db
 from .model.account import Account
@@ -87,6 +92,23 @@ application.register_blueprint(notification_bp)
 application.register_blueprint(post_bp)
 application.register_blueprint(profile_bp)
 application.register_blueprint(webex_bp)
+
+# latency tracking
+
+@application.before_request
+def start_timer():
+    g.start_time = time.perf_counter()
+
+@application.after_request
+def log_latency(response):
+    if hasattr(g, 'start_time'):
+        # Calculate the delta in milliseconds
+        latency = math.floor((time.perf_counter() - g.start_time) * 1000)
+        request_log = f"[{request.method}] {request.path}"
+        HealthCheckService.log_latency(request_log,latency)
+        print(f"{request_log} - Latency: {latency:.2f}ms")
+    return response
+
 
 # routes
 

@@ -20,3 +20,4 @@ openvino-genai>=2024.4
 faster-whisper>=1.1.0
 azure-identity
 azure-keyvault-secrets
+asyncio
