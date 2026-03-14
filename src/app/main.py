@@ -103,17 +103,16 @@ application.register_blueprint(webex_bp)
 # latency tracking
 
 @application.before_request
-def start_timer():
+async def start_timer():
     g.start_time = time.perf_counter()
 
 @application.after_request
-def log_latency(response):
+async def log_latency(response):
     if hasattr(g, 'start_time'):
         # Calculate the delta in milliseconds
         latency = math.floor((time.perf_counter() - g.start_time) * 1000)
         request_log = f"[{request.method}] {request.path}"
-        health_check_service.log_latency(request_log,latency)
-        print(f"{request_log} - Latency: {latency:.2f}ms")
+        await health_check_service.log_latency(request_log,latency)
     return response
 
 
@@ -334,7 +333,18 @@ def health_check():
     }), http_code
 
 
-# admin dahsboard routes
+# admin dashboard routes
+
+@application.route('/api/latency-history', methods=['GET'])
+@jwt_required()
+def get_latency_history():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+    if not health_check_service.latency_history:
+        return jsonify({"msg": "No latency data available, refresh later"}), 422
+    latency_history = health_check_service.latency_history
+    return jsonify(latency_history), 200
 
 @application.route('/auth/admin', methods=['GET'])
 @jwt_required()
