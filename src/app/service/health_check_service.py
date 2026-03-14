@@ -1,14 +1,42 @@
 from ..config import Config
 import time
 import asyncio
+
+from flask_sqlalchemy import SQLAlchemy # need to be fed in
+from sqlalchemy import text
+from .webex_service import WebexService # need to be fed in
+from .azure_keyvault_service import AzureKeyVaultService # only static service
+from .chromadb_service import ChromaDBService # need to be fed in
+
 class HealthCheckService:
+
+    health_check_list = [
+        "engine_latency_health",
+        "config_health",
+        "chromadb_health",
+        "azkv_health",
+        "openvino_health",
+        "webex_health",
+        "db_health",
+        "faster_whisper_health"
+    ]
+
+    default_required_checks = [
+        "engine_latency_health",
+        "config_health",
+        "chromadb_health",
+        "azkv_health",
+        "webex_health",
+        "db_health",
+    ]
 
     def __init__(self):
         self.latency_threshold_ms = int(Config.get_variable("LATENCY_THRESHOLD_MS", "500")) # milliseconds
         self.latency_check_enabled = Config.get_variable("LATENCY_CHECK_ENABLED", "true").lower() == "true"
         self.latency_check_interval_seconds = int(Config.get_variable("LATENCY_CHECK_INTERVAL_SECONDS", "60")) # seconds
         self.latency_check_history_length = int(Config.get_variable("LATENCY_CHECK_HISTORY_LENGTH", "100")) # number of entries to keep in history
-        self.azkv_required = Config.get_variable("AZKV_REQUIRED", "false").lower() == "true"
+        self.required_checks = Config.get_variable("REQUIRED_HEALTH_CHECKS", ",".join(HealthCheckService.default_required_checks)).split(",") # which checks are required for overall healthy status
+
         self.latency_history = []  # Store latency history for monitoring
 
     
@@ -21,7 +49,7 @@ class HealthCheckService:
         self.latency_check_enabled = Config.get_variable("LATENCY_CHECK_ENABLED", "true").lower() == "true"
         self.latency_check_interval_seconds = int(Config.get_variable("LATENCY_CHECK_INTERVAL_SECONDS", "60"))
         self.latency_check_history_length = int(Config.get_variable("LATENCY_CHECK_HISTORY_LENGTH", "100"))
-
+        self.required_checks = Config.get_variable("REQUIRED_HEALTH_CHECKS", ",".join(HealthCheckService.default_required_checks)).split(",")
     
     async def log_latency(self, request_log: str, latency_ms: int):
         """
@@ -39,57 +67,53 @@ class HealthCheckService:
             })
             # Keep only the most recent entries up to the specified history length
             if len(self.latency_history) > self.latency_check_history_length:
-                self.latency_history.pop(0)
-    
-    def perform_latency_check(self, start_time) -> dict:
+                self.latency_history.pop(0)  
+    def perform_latency_check(self) -> dict:
         """
             healthy: if every latency is below threshold
             unhealthy: if any latency is above threshold
             degraded: if average latency is above threshold
         """
-        if not HealthCheckService.latency_check_enabled:
+        if not self.latency_check_enabled:
             return {
                 "status": "disabled",
                 "message": "Latency check is disabled in configuration."
             }
-        if not HealthCheckService.latency_history:
+        if not self.latency_history:
             return {
                 "status": "unknown",
                 "message": "No latency data available yet."
             }
 
         total_latency = 0
-        for entry in HealthCheckService.latency_history:
-            if entry["latency_ms"] > HealthCheckService.latency_threshold_ms:
+        for entry in self.latency_history:
+            if entry["latency_ms"] > self.latency_threshold_ms:
                 print(f"Warning: High latency detected - {entry['request_log']} - Latency: {entry['latency_ms']}ms")
             total_latency += entry["latency_ms"]
     
         status = "healthy"
-        if any(entry["latency_ms"] > HealthCheckService.latency_threshold_ms for entry in HealthCheckService.latency_history):
+        if any(entry["latency_ms"] > self.latency_threshold_ms for entry in self.latency_history):
             status = "unhealthy"
-        elif average_latency > HealthCheckService.latency_threshold_ms:
+        elif average_latency > self.latency_threshold_ms:
             status = "degraded"
-        average_latency = total_latency / len(HealthCheckService.latency_history) if HealthCheckService.latency_history else 0
+        average_latency = total_latency / len(self.latency_history) if self.latency_history else 0
     
         return {
             "status": status,
             "average_latency_ms": average_latency
         }
     
-    # service health check
+    # service  / dbhealth check
     
     def perform_config_health_check(self) -> dict:
         """
         Perform a health check on the configuration service by attempting to retrieve safe variables.
         
-        Args:
-            config_service: An instance of the Config class to check
-            
         Returns:
             A dictionary with the health status and retrieved variables if successful, or an error message if not.
         """
         try:
-            safe_variables = config_service.get_all_safe_variables()
+            safe_variables = Config.get_all_safe_variables()
             return {
                 "status": "healthy"
             }
@@ -98,7 +122,7 @@ class HealthCheckService:
                 "status": "unhealthy",
                 "message": str(e)
             }   
-    def perform_chromadb_health_check(self, chroma_service) -> dict:
+    def perform_chromadb_health_check(self, chroma_service: ChromaDBService) -> dict:
         """
         Perform a health check on the ChromaDB service by attempting to retrieve collection information.
         
@@ -128,18 +152,14 @@ class HealthCheckService:
     def perform_azure_keyvault_health_check(self) -> dict:
         """
         Perform a health check on the Azure Key Vault service by attempting to retrieve a test secret.
-        
-        Args:
-            azkv_service: An instance of the AzureKeyVaultService to check
-            
         Returns:
             A dictionary with the health status and secret value if successful, or an error message if not.
         """
         try:
             test_secret_name = "healthchecktestsecret"
             test_secret_value = "healthchecktestvalue"
-            azkv_service.update_secret(test_secret_name, test_secret_value)
-            retrieved_value = azkv_service.get_secret(test_secret_name)
+            AzureKeyVaultService.update_secret(test_secret_name, test_secret_value)
+            retrieved_value = AzureKeyVaultService.get_secret(test_secret_name)
             if retrieved_value == test_secret_value:
                 return {
                     "status": "healthy"
@@ -153,59 +173,105 @@ class HealthCheckService:
                 "status": "unhealthy",
                 "message": str(e)
             }  
-    def perform_openvino_health_check(self, openvino_service) -> dict:
+    def perform_openvino_health_check(self) -> dict:
+        return {
+            "status": "unhealthy",
+            "message": "Faster Whisper is not used. No health check implemented."
+        }
+    def perform_webex_health_check(self, webex_service: WebexService) -> dict:
         """
-        Perform a health check on the OpenVINO service by attempting to run a simple inference.
-        
-        Args:
-            openvino_service: An instance of the OpenVINOService to check
-            
-        Returns:
-            A dictionary with the health status and inference result if successful, or an error message if not.
+        Perform a health check on the Webex service by attempting to auth url.
         """
         try:
-            inference_result = openvino_service.run_health_check_inference()
-            if inference_result.get("status") == "success":
+            authurl = webex_service.get_auth_url()
+            if authurl:
                 return {
                     "status": "healthy",
-                    "inference_result": inference_result
+                    "message": "auth URL retrieved successfully"
                 }
             else:
                 return {
                     "status": "unhealthy",
-                    "message": "Inference failed"
+                    "message": "Failed to retrieve auth URL"
                 }
         except Exception as e:
             return {
                 "status": "unhealthy",
                 "message": str(e)
             }
+    def perform_db_health_check(self, db: SQLAlchemy) -> dict:
+        """
+        Perform a health check on the database with latency timing.
+        """
+        start_time = time.perf_counter()
+        try:
+            # 1. Use text() for 2.0+ compatibility
+            # 2. Use .scalar() as a cleaner way to get a single value
+            result = db.session.execute(text("SELECT 1")).scalar()
+            
+            latency_ms = (time.perf_counter() - start_time) * 1000
+
+            if result == 1:
+                return {
+                    "status": "healthy",
+                    "latency_ms": round(latency_ms, 2)
+                }
+            
+            return {
+                "status": "unhealthy",
+                "message": "Unexpected query result",
+                "latency_ms": round(latency_ms, 2)
+            }
+
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "message": f"Database connection error: {str(e)}",
+                "latency_ms": round((time.perf_counter() - start_time) * 1000, 2)
+            }
+    def perform_faster_whisper_health_check(self) -> dict:
+        return {
+            "status": "unhealthy",
+            "message": "Faster Whisper is not used. No health check implemented."
+        }
     
     # health check probe that checks everything
     
-    def perform_comprehensive_health_check(self): # checks the health of EVERYTHING.
-        config_health = self.perform_config_health_check()
-        chromadb_health = self.perform_chromadb_health_check()
-        azkv_health = self.perform_azure_keyvault_health_check()
-        openvino_health = self.perform_openvino_health_check()
-
+    def perform_comprehensive_health_check(self, chroma_service: ChromaDBService, webex_service: WebexService, db: SQLAlchemy): # checks the health of EVERYTHING.
+        """
+        Perform a comprehensive health check on all services and return an overall status.
+        args:
+            chroma_service: An instance of the ChromaDBService to check
+            webex_service: An instance of the WebexService to check
+            db: An instance of the SQLAlchemy database to check
+        """
+        
         all_health = {
-            "config_health": config_health,
-            "chromadb_health": chromadb_health,
-            "azkv_health": azkv_health,
-            "openvino_health": openvino_health
+            "engine_latency_health": self.perform_latency_check(),
+            "config_health": self.perform_config_health_check(),
+            "chromadb_health": self.perform_chromadb_health_check(chroma_service),
+            "azkv_health": self.perform_azure_keyvault_health_check(),
+            "openvino_health": self.perform_openvino_health_check(),
+            "webex_health": self.perform_webex_health_check(webex_service),
+            "db_health": self.perform_db_health_check(db),
+            "faster_whisper_health": self.perform_faster_whisper_health_check()
         }
 
         overall_status = "healthy"
-        # if any(health.get("status") != "healthy" for health in all_health.values()):
-        #     overall_status = "unhealthy"
-
-        # decide better
+        for check in self.required_checks:
+            if all_health.get(check, {}).get("status") != "healthy":
+                overall_status = "degraded" # should be unhealthy, but whatever
+                break
 
         return {
             "status": overall_status,
-            "config_health": config_health,
-            "chromadb_health": chromadb_health,
-            "azure_keyvault_health": azkv_health,
-            "openvino_health": openvino_health
+            "required_checks": self.required_checks,
+            "engine_latency_health": all_health["engine_latency_health"],
+            "config_health": all_health["config_health"],
+            "chromadb_health": all_health["chromadb_health"],
+            "azure_keyvault_health": all_health["azkv_health"],
+            "openvino_health": all_health["openvino_health"],
+            "webex_health": all_health["webex_health"],
+            "db_health": all_health["db_health"],
+            "faster_whisper_health": all_health["faster_whisper_health"]
         }

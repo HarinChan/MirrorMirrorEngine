@@ -31,13 +31,13 @@ from .model.recentcall import RecentCall
 
 from .blueprint.account_bp import account_bp
 from .blueprint.chat_bp import chat_bp
-from .blueprint.chroma_bp import chroma_bp
+from .blueprint.chroma_bp import chroma_bp, chroma_service
 from .blueprint.friends_bp import friends_bp
 from .blueprint.meeting_bp import meeting_bp
 from .blueprint.notification_bp import notification_bp
 from .blueprint.posts_bp import post_bp
 from .blueprint.profile_bp import profile_bp
-from .blueprint.webex_bp import webex_bp
+from .blueprint.webex_bp import webex_bp, webex_service
 
 from .helper import PenpalsHelper as helper
 from .config import Config
@@ -82,6 +82,9 @@ with application.app_context():
     db.create_all()
     print("Database initialized successfully!")
 
+# initialize healtcheck service
+health_check_service = HealthCheckService()
+
 # register blue prints for API endpoints
 application.register_blueprint(account_bp)
 application.register_blueprint(chat_bp)
@@ -105,7 +108,7 @@ def log_latency(response):
         # Calculate the delta in milliseconds
         latency = math.floor((time.perf_counter() - g.start_time) * 1000)
         request_log = f"[{request.method}] {request.path}"
-        HealthCheckService.log_latency(request_log,latency)
+        health_check_service.log_latency(request_log,latency)
         print(f"{request_log} - Latency: {latency:.2f}ms")
     return response
 
@@ -287,6 +290,26 @@ def get_current_user():
         },
         "classrooms": classrooms
     }), 200
+
+@application.route('/api/health', methods=['GET'])
+def health_check():
+    health_status = health_check_service.perform_comprehensive_health_check(chroma_service, webex_service, db)
+    status = health_status.get("status", "unhealthy")
+
+    # Use a dictionary to map status to HTTP codes
+    status_codes = {
+        "healthy": 200,
+        "degraded": 200,
+        "unhealthy": 503  # Standard practice is 503 (Service Unavailable)
+    }
+
+    # Get the code, defaulting to 500 if something totally unexpected happens
+    http_code = status_codes.get(status, 500)
+
+    return jsonify({
+        "status": status,
+        "details": health_status
+    }), http_code
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=5001)
