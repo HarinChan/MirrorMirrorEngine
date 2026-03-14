@@ -2,15 +2,21 @@ import os
 import requests
 from datetime import datetime
 import urllib.parse
+from ..config import Config
 
 class WebexService:
     BASE_URL = "https://webexapis.com/v1"
     
     def __init__(self):
-        self.client_id = os.environ.get('WEBEX_CLIENT_ID')
-        self.client_secret = os.environ.get('WEBEX_CLIENT_SECRET')
-        self.redirect_uri = os.environ.get('WEBEX_REDIRECT_URI')
-        
+        self.client_id =  Config.get_variable('WEBEX_CLIENT_ID',"")
+        self.client_secret = Config.get_variable('WEBEX_CLIENT_SECRET',"")
+        self.redirect_uri = Config.get_variable('WEBEX_REDIRECT_URI',"")
+    
+    def refresh_config(self):
+        """Refresh configuration from environment variables or config service"""
+        self.client_id =  Config.get_variable('WEBEX_CLIENT_ID',"")
+        self.client_secret = Config.get_variable('WEBEX_CLIENT_SECRET',"")
+        self.redirect_uri = Config.get_variable('WEBEX_REDIRECT_URI',"")
     def get_auth_url(self):
         """Generate the WebEx OAuth authorization URL"""
         if not self.client_id or not self.redirect_uri:
