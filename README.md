@@ -98,3 +98,8 @@ Note: `/api/classrooms` also is a supported alias for these routes.
 | `/api/documents/delete` | `DELETE` | Delete documents by ID                   |
 | `/api/documents/info`   | `GET`    | Get collection statistics                |
 | `/api/documents/update` | `PUT`    | Update existing document embeddings      |
+
+### Health Check
+| Endpoint      | Method | Description                                     |
+| :------------ | :----- | :---------------------------------------------- |
+| `/api/health` | `GET`  | Returns a health check of all running features. |
