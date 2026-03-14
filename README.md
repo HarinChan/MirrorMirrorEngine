@@ -1,5 +1,24 @@
 # MirrorMirror
 
+## Dashboard Documentation
+
+#### **Login to Dashboad**
+   
+Access login page via: `/admin/login`
+
+| Field    | Value            |
+| :------- | :--------------- |
+| email    | `admin@gmail.com |
+| password | `admin`          |
+
+When login, dashboard page is available at: `/admin/dashboard`
+
+#### **Dashboard Functions**
+- View Health Checks
+- View Current Configuration Settings
+- Update Runtime Configuration Settings
+  - Update Keyvauult Values
+
 ## API Documentation
 
 The MirrorMirror engine provides a RESTful API for managing accounts, profiles/profiles, social features, meetings, WebEx integration, and semantic search. Most endpoints require a JWT token in the `Authorization: Bearer <token>` header.

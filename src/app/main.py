@@ -4,9 +4,9 @@ Handles authentication, basic profile operations, and ChromaDB document manageme
 Account and classroom management is handled by separate blueprints.
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import timedelta
@@ -89,6 +89,7 @@ health_check_service = HealthCheckService()
 application.register_blueprint(account_bp)
 application.register_blueprint(chat_bp)
 application.register_blueprint(chroma_bp)
+application.register_blueprint(dashboard_bp)
 application.register_blueprint(friends_bp)
 application.register_blueprint(meeting_bp)
 application.register_blueprint(notification_bp)
@@ -165,6 +166,21 @@ def login():
     if not email or not password:
         return jsonify({"msg": "Missing email or password"}), 400
     
+    # compare against admin accounts first
+    admin_accounts = json.loads(Config.get_variable("ADMIN_ACCOUNTS", "{}"))
+    if email in admin_accounts:
+        admin_password_hash = admin_accounts[email]
+        if bcrypt.checkpw(password.encode(), admin_password_hash.encode()):
+            claims = {"role": "admin"}
+            access_token = create_access_token(identity=email, additional_claims=claims)
+            account_id = email
+            return jsonify({
+                "access_token": access_token,
+                "account_id": account_id,
+            }), 200
+
+    # then compare against user accounts
+
     account = Account.query.filter_by(email=email).first()
     
     # Password is a client-side SHA-256 hash; bcrypt it and compare
