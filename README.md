@@ -17,7 +17,7 @@ When login, dashboard page is available at: `/admin/dashboard`
 - View Health Checks
 - View Current Configuration Settings
 - Update Runtime Configuration Settings
-  - Update Keyvauult Values
+  - Update Keyvault Values
 
 ## API Documentation
 
