@@ -8,9 +8,9 @@ class WebexService:
     BASE_URL = "https://webexapis.com/v1"
     
     def __init__(self):
-        self.client_id =  Config.get_variable('WEBEX_CLIENT_ID')
-        self.client_secret = Config.get_variable('WEBEX_CLIENT_SECRET')
-        self.redirect_uri = Config.get_variable('WEBEX_REDIRECT_URI')
+        self.client_id =  Config.get_variable('WEBEX_CLIENT_ID',"")
+        self.client_secret = Config.get_variable('WEBEX_CLIENT_SECRET',"")
+        self.redirect_uri = Config.get_variable('WEBEX_REDIRECT_URI',"")
         
     def get_auth_url(self):
         """Generate the WebEx OAuth authorization URL"""

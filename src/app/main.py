@@ -48,8 +48,8 @@ print_tables()
 # Respect reverse-proxy headers (e.g., X-Forwarded-Proto) in deployed environments.
 application.wsgi_app = ProxyFix(application.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
-application.config['SECRET_KEY'] = Config.get_variable('FLASK_SECRET_KEY')
-application.config['JWT_SECRET_KEY'] = Config.get_variable('JWT_SECRET_KEY')
+application.config['SECRET_KEY'] = Config.get_variable('FLASK_SECRET_KEY',"TEST_FLASK_KEY")
+application.config['JWT_SECRET_KEY'] = Config.get_variable('JWT_SECRET_KEY',"TEST_JWT_KEY")
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 application.config['PREFERRED_URL_SCHEME'] = Config.get_variable('PREFERRED_URL_SCHEME', 'http')
 
