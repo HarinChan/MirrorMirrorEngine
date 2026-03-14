@@ -29,6 +29,7 @@ from .blueprint.chat_bp import chat_bp
 from .blueprint.chroma_bp import chroma_bp
 from .blueprint.friends_bp import friends_bp
 from .blueprint.meeting_bp import meeting_bp
+from .blueprint.messaging_bp import messaging_bp
 from .blueprint.notification_bp import notification_bp
 from .blueprint.posts_bp import post_bp
 from .blueprint.profile_bp import profile_bp
@@ -83,6 +84,7 @@ application.register_blueprint(chat_bp)
 application.register_blueprint(chroma_bp)
 application.register_blueprint(friends_bp)
 application.register_blueprint(meeting_bp)
+application.register_blueprint(messaging_bp)
 application.register_blueprint(notification_bp)
 application.register_blueprint(post_bp)
 application.register_blueprint(profile_bp)
@@ -184,12 +186,14 @@ def get_current_user():
         # Fetch friends (relations)
         # We look for accepted relations where this classroom is either sender or receiver
         friends = []
+        seen_friend_ids = set()  # Track to avoid duplicates
         
         # Sent accepted requests (my friends)
         sent_relations = Relation.query.filter_by(from_profile_id=classroom.id, status='accepted').all()
         for rel in sent_relations:
             friend_profile = Profile.query.get(rel.to_profile_id)
-            if friend_profile:
+            if friend_profile and friend_profile.id not in seen_friend_ids:
+                seen_friend_ids.add(friend_profile.id)
                 friends.append({
                     "id": str(friend_profile.id),
                     "classroomId": str(friend_profile.id),
@@ -203,7 +207,8 @@ def get_current_user():
         received_relations = Relation.query.filter_by(to_profile_id=classroom.id, status='accepted').all()
         for rel in received_relations:
             friend_profile = Profile.query.get(rel.from_profile_id)
-            if friend_profile:
+            if friend_profile and friend_profile.id not in seen_friend_ids:
+                seen_friend_ids.add(friend_profile.id)
                 friends.append({
                     "id": str(friend_profile.id),
                     "classroomId": str(friend_profile.id),
