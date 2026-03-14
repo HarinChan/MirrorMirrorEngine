@@ -4,9 +4,9 @@ Handles authentication, basic profile operations, and ChromaDB document manageme
 Account and classroom management is handled by separate blueprints.
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import timedelta
@@ -32,6 +32,7 @@ from .model.recentcall import RecentCall
 from .blueprint.account_bp import account_bp
 from .blueprint.chat_bp import chat_bp
 from .blueprint.chroma_bp import chroma_bp, chroma_service
+from .blueprint.dashboard_bp import dashboard_bp
 from .blueprint.friends_bp import friends_bp
 from .blueprint.meeting_bp import meeting_bp
 from .blueprint.messaging_bp import messaging_bp
@@ -90,6 +91,7 @@ health_check_service = HealthCheckService()
 application.register_blueprint(account_bp)
 application.register_blueprint(chat_bp)
 application.register_blueprint(chroma_bp)
+application.register_blueprint(dashboard_bp)
 application.register_blueprint(friends_bp)
 application.register_blueprint(meeting_bp)
 application.register_blueprint(messaging_bp)
@@ -101,17 +103,16 @@ application.register_blueprint(webex_bp)
 # latency tracking
 
 @application.before_request
-def start_timer():
+async def start_timer():
     g.start_time = time.perf_counter()
 
 @application.after_request
-def log_latency(response):
+async def log_latency(response):
     if hasattr(g, 'start_time'):
         # Calculate the delta in milliseconds
         latency = math.floor((time.perf_counter() - g.start_time) * 1000)
         request_log = f"[{request.method}] {request.path}"
-        health_check_service.log_latency(request_log,latency)
-        print(f"{request_log} - Latency: {latency:.2f}ms")
+        await health_check_service.log_latency(request_log,latency)
     return response
 
 
@@ -167,6 +168,21 @@ def login():
     if not email or not password:
         return jsonify({"msg": "Missing email or password"}), 400
     
+    # compare against admin accounts first
+    admin_accounts = json.loads(Config.get_variable("ADMIN_ACCOUNTS", "{}"))
+    if email in admin_accounts:
+        admin_password_hash = admin_accounts[email]
+        if bcrypt.checkpw(password.encode(), admin_password_hash.encode()):
+            claims = {"role": "admin"}
+            access_token = create_access_token(identity=email, additional_claims=claims)
+            account_id = email
+            return jsonify({
+                "access_token": access_token,
+                "account_id": account_id,
+            }), 200
+
+    # then compare against user accounts
+
     account = Account.query.filter_by(email=email).first()
     
     # Password is a client-side SHA-256 hash; bcrypt it and compare
@@ -315,6 +331,59 @@ def health_check():
         "status": status,
         "details": health_status
     }), http_code
+
+
+# admin dashboard routes
+
+@application.route('/api/latency-history', methods=['GET'])
+@jwt_required()
+def get_latency_history():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+    if not health_check_service.latency_history:
+        return jsonify({"msg": "No latency data available, refresh later"}), 422
+    latency_history = health_check_service.latency_history
+    return jsonify(latency_history), 200
+
+@application.route('/auth/admin', methods=['GET'])
+@jwt_required()
+def authenticate_admin():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+    return jsonify({"msg": "Admin authenticated successfully"}), 200
+
+@application.route('/api/config', methods=['GET'])
+@jwt_required()
+def admin_config_status():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+
+
+    status = {
+        "safe_get_keys_whitelist": Config.settings["safe_get_keys_whitelist"], # list[str]
+        "safe_set_keys_whitelist": Config.settings["safe_set_keys_whitelist"], # list[str]
+        "current_safe_variables": Config.get_all_safe_variables() # dictionary{str:str}
+    }
+    return jsonify(status), 200
+
+
+@application.route('/api/config', methods=['POST'])
+@jwt_required()
+def admin_config_update():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+    data = request.json
+    if not data:
+        return jsonify({"msg": "Invalid request format"}), 400
+    key = data.get("key")
+    value = data.get("value")
+    ignore_azure = data.get("ignoreAzure", False)
+    Config.safe_set_variable(key, value, ignore_azure=ignore_azure)
+    return jsonify({"msg": "Configuration updated successfully"}), 200
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=5001)

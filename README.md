@@ -1,5 +1,24 @@
 # MirrorMirror
 
+## Dashboard Documentation
+
+#### **Login to Dashboad**
+   
+Access login page via: `/admin/login`
+
+| Field    | Value            |
+| :------- | :--------------- |
+| email    | `admin@gmail.com` |
+| password | `admin`          |
+
+When login, dashboard page is available at: `/admin/dashboard`
+
+#### **Dashboard Functions**
+- View Health Checks
+- View Current Configuration Settings
+- Update Runtime Configuration Settings
+  - Update Keyvault Values
+
 ## API Documentation
 
 The MirrorMirror engine provides a RESTful API for managing accounts, profiles/profiles, social features, meetings, WebEx integration, and semantic search. Most endpoints require a JWT token in the `Authorization: Bearer <token>` header.
@@ -103,3 +122,17 @@ Note: `/api/classrooms` also is a supported alias for these routes.
 | Endpoint      | Method | Description                                     |
 | :------------ | :----- | :---------------------------------------------- |
 | `/api/health` | `GET`  | Returns a health check of all running features. |
+| `/api/latency-history` | `GET` | Returns engine latency history tracked internally.|
+
+### Admin Dashboard
+| Endpoint           | Method | Description                                       |
+| :----------------- | :----- | :------------------------------------------------ |
+| `/admin/dashboard` | `GET`  | Dashboard page, requires admin authorization.     |
+| `/admin/login`     | `GET`  | Admin login page, redirects to dashboard page.    |
+| `/auth/admin`      | `GET`  | Authenticates the JWT header belongs to an admin. |
+
+### Configuration
+| Endpoint      | Method | Description                                     |
+| :------------ | :----- | :---------------------------------------------- |
+| `/api/config` | `GET`  | Returns a safe to get configuration variable. |
+| `/api/config` | `POST` | Edits a safe to set configuration variable, option to include update to keyvault. |
