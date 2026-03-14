@@ -11,10 +11,30 @@ class Config:
     """
     settings = {
         "safe_get_keys_whitelist": [ # must not include itself
+            "JWT_SECRET_KEY",
+            "FLASK_SECRET_KEY",
 
+            "WEBEX_ACCESS_TOKEN",
+            "WEBEX_CLIENT_ID",
+            "WEBEX_CLIENT_SECRET",
+            "WEBEX_REDIRECT_URI",
+            
+            "KEYVAULT_CLIENT_ID",
+            "KEYVAULT_CLIENT_SECRET",
+            "KEYVAULT_TENANT_ID",
         ],
         "safe_set_keys_whitelist": [  # must not include itself
+            "JWT_SECRET_KEY",
+            "FLASK_SECRET_KEY",
+            
+            "WEBEX_ACCESS_TOKEN",
+            "WEBEX_CLIENT_ID",
+            "WEBEX_CLIENT_SECRET",
+            "WEBEX_REDIRECT_URI",
 
+            "KEYVAULT_CLIENT_ID",
+            "KEYVAULT_CLIENT_SECRET",
+            "KEYVAULT_TENANT_ID",
         ]
     }
 

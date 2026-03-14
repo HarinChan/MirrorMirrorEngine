@@ -44,7 +44,7 @@ def _extract_context_classroom_ids(context_docs, limit: int = 3, user_query: str
         if isinstance(metadata, dict):
             if metadata.get("source") != "post":
                 continue
-            classroom_id = metadata.get("classroom_id")
+            classroom_id = metadata.get("profile_id") or metadata.get("classroom_id")
             if classroom_id:
                 classroom_id = str(classroom_id)
                 if classroom_id not in ids:
