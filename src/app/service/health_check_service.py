@@ -17,7 +17,7 @@ class HealthCheckService:
         "azkv_health",
         "openvino_health",
         "webex_health",
-        "db_health",
+        "sqlalchemy_db_health",
         "faster_whisper_health"
     ]
 
@@ -27,7 +27,7 @@ class HealthCheckService:
         "chromadb_health",
         "azkv_health",
         "webex_health",
-        "db_health",
+        "sqlalchemy_db_health",
     ]
 
     def __init__(self):
@@ -176,7 +176,7 @@ class HealthCheckService:
     def perform_openvino_health_check(self) -> dict:
         return {
             "status": "unhealthy",
-            "message": "Faster Whisper is not used. No health check implemented."
+            "message": "OpenVino is not used. No health check implemented."
         }
     def perform_webex_health_check(self, webex_service: WebexService) -> dict:
         """
@@ -253,7 +253,7 @@ class HealthCheckService:
             "azkv_health": self.perform_azure_keyvault_health_check(),
             "openvino_health": self.perform_openvino_health_check(),
             "webex_health": self.perform_webex_health_check(webex_service),
-            "db_health": self.perform_db_health_check(db),
+            "sqlalchemy_db_health": self.perform_db_health_check(db),
             "faster_whisper_health": self.perform_faster_whisper_health_check()
         }
 
@@ -272,6 +272,6 @@ class HealthCheckService:
             "azure_keyvault_health": all_health["azkv_health"],
             "openvino_health": all_health["openvino_health"],
             "webex_health": all_health["webex_health"],
-            "db_health": all_health["db_health"],
+            "sqlalchemy_db_health": all_health["sqlalchemy_db_health"],
             "faster_whisper_health": all_health["faster_whisper_health"]
         }
