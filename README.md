@@ -1,14 +1,15 @@
 # MirrorMirror
 
-MirrorMirror engine is a 
+MirrorMirror engine is a social networing engine 
 
 ## Table of Contents
 ---
 - [MirrorMirror](#mirrormirror)
   - [Table of Contents](#table-of-contents)
   - [Deploying the Engine](#deploying-the-engine)
-      - [A. Deploy on Azure from Scratch](#a-deploy-on-azure-from-scratch)
-      - [B. Deploy on your own Server (Windows / Linux)](#b-deploy-on-your-own-server-windows--linux)
+      - [A. Built and Deploy on Windows (.exe)]()
+      - [B. Deploy on Azure from Scratch](#b-deploy-on-azure-from-scratch)
+      - [C. Deploy on your own Server (Windows / Linux)](#c-deploy-on-your-own-server-windows--linux)
   - [API Documentation](#api-documentation)
         - [Authentication](#authentication)
         - [Account Management](#account-management)
@@ -24,17 +25,51 @@ MirrorMirror engine is a
 ## Deploying the Engine
 ---
 To deploy this engine for you own purposes:
-1. first create a new repository using this repository as a template
+1. clone the repository or create a fork repository using this repository as a template
 2. Configure your python environment to be 3.13.7
 3. Create an Webex app:
    1. Signup / Log into Webex at [Webex for Developers](https://developer.webex.com/)
-   2. create an app [NOTDONE]
-   3. modify mutex permission for the app [NOTDONE]
+   2. Click Profile -> My Webex Apps -> Create a new App -> Integration
+   3. add the following redirect URIs: `http://localhost:3000`, `https://localhost:3000`
+   4. make sure to give the following permissions: `meeting:participants_write`, `meeting:participants_read`, `meeting:schedules_write`, `meeting:schedules_read`
+   5. Copy Client ID and Client Secret
 4. Follow one of the following sections:
-   - A. if you wish to deploy the engine on Azure from scratch
-   - B. if you wish to host the engine on your own server
+   - A. if you wish to host the engine on your own server (native .exe build):
+   - B. if you wish to deploy the engine on Azure from scratch
+   - C. if you wish to host the engine on your own server (Python)
 ---
-#### A. Deploy on Azure from Scratch
+#### A. Build and Deploy on Windows:
+
+To compile to a windows executable:
+1. Install all requirements:
+```
+pip install -r requirements.txt
+```
+2. Install build dependencies:
+```
+pip install nuitka ordered-set zstandard
+```
+3. Initialise the database and download the LLM
+```
+pip -m src.app.init_db
+python \models\download.py
+```
+4. Create a `.env`file at root and add the following:
+```
+FLASK_SECRET_KEY = 'FLASK_SECRET_KEY = 'dev-secret-key-change-in-production'
+JWT_SECRET_KEY = 'jwt-secret-key-change-in-production'
+WEBEX_CLIENT_ID = 'the-copied-webex-client-id'
+WEBEX_CLIENT_SECRET = 'the-copied-webex-client-secret'
+WEBEX_REDIRECT_URI = 'http://localhost:3000'
+```
+5. Run the build script in power-shell
+```
+.\build-and-run.ps1
+```
+The compiled built can be found in `\build\app.dist\` and run using `mirrormirror.exe`.
+
+---
+#### B. Deploy on Azure from Scratch
 1. Create a Azure account
 2. Obtain a subscription, note down its id as `your_subscription_id`
 3. Create a resource under the subscription: `your_resource_name`
@@ -99,7 +134,7 @@ b. define the following `Repository Secrets`:
    1. Arbitrary Pull Request
    2. Manually on Github Webview under `Actions` Tab
 ---
-#### B. Deploy on your own Server (Windows / Linux)
+#### C. Deploy on your own Server (Windows / Linux)
 1. Create a new repository from template.
 2. If you are on Windows, ensure you have WSL2 (Ubuntu) installed. For native Linux, ensure your package manager is up to date via 
 ```bash
