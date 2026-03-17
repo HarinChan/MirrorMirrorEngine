@@ -371,7 +371,7 @@ def admin_config_status():
 
     status = {
         "safe_set_keys_whitelist": Config.settings["safe_set_keys_whitelist"], # list[str]
-        "current_safe_variables": Config.get_all_safe_variables() # dictionary{str:str}
+        "current_safe_variables": Config.get_all_safe_variables(False,False) # dictionary{str:str}
     }
     return jsonify(status), 200
 
@@ -389,7 +389,8 @@ def admin_config_update():
     key = data.get("key")
     value = data.get("value")
     ignore_azure = data.get("ignoreAzure", False)
-    success = Config.safe_set_variable(key, value, ignore_azure=ignore_azure)
+    ignore_sqlcipher = data.get("ignoreSqlcipher", False)
+    success = Config.safe_set_variable(key, value, ignore_azure=ignore_azure, ignore_sqlcipher=ignore_sqlcipher)
     if not success:
         return jsonify({"msg": f"Failed to update variable '{key}'. It may not be in the safe set whitelist."}), 400
     

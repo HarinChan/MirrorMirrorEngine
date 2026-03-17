@@ -48,35 +48,35 @@ class Config:
     }
 
     @staticmethod
-    def get_all_safe_variables() -> dict:
+    def get_all_safe_variables(ignore_azure: bool=False, ignore_sqlcipher: bool=False) -> dict:
         """
             Get all variables in the safe get whitelist with their values.
         """
         safe_vars = {}
         for key in Config.settings["safe_get_keys_whitelist"]:
-            if Config.get_variable(key, "") != "":
-                safe_vars[key] = Config.get_variable(key, "")
+            if Config.get_variable(key, "", ignore_azure, ignore_sqlcipher) != "":
+                safe_vars[key] = Config.get_variable(key, "", ignore_azure, ignore_sqlcipher)
         return safe_vars
 
     @staticmethod
-    def safe_get_variable(name:str, default=None, ignore_azure: bool=False) -> str:
+    def safe_get_variable(name:str, default=None, ignore_azure: bool=False, ignore_sqlcipher: bool=False) -> str:
         """
             A safe version of get_variable that returns None instead of throwing an error if the variable is not found.
         """
         if name not in Config.settings["safe_get_keys_whitelist"]:
             print(f"Attempted to access variable '{name}' which is not in the safe get whitelist. Returning default value.")
             return default
-        return Config.get_variable(name, default, ignore_azure)
+        return Config.get_variable(name, default, ignore_azure, ignore_sqlcipher)
 
     @staticmethod
-    def safe_set_variable(name: str, value: str, ignore_azure: bool=False) -> bool:
+    def safe_set_variable(name: str, value: str, ignore_azure: bool=False, ignore_sqlcipher: bool=False) -> bool:
         """
             A safe version of set_variable that only allows setting variables in the whitelist and does not throw an error if the variable is not in the whitelist.
         """
         if name not in Config.settings["safe_set_keys_whitelist"]:
             print(f"Attempted to set variable '{name}' which is not in the safe set whitelist. Ignoring.")
             return False
-        Config.set_variable(name, value, ignore_azure)
+        Config.set_variable(name, value, ignore_azure, ignore_sqlcipher)
         return True
 
     @staticmethod

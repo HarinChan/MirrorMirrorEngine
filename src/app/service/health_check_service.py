@@ -7,12 +7,14 @@ from sqlalchemy import text
 from .webex_service import WebexService # need to be fed in
 from .azure_keyvault_service import AzureKeyVaultService # only static service
 from .chromadb_service import ChromaDBService # need to be fed in
+from .local_config_service import LocalConfigService # only static service
 
 class HealthCheckService:
 
     health_check_list = [
         "engine_latency_health",
-        "config_health",
+        "runtime_config_health",
+        "sqlcipher_config_health",
         "chromadb_health",
         "azkv_health",
         "openvino_health",
@@ -23,7 +25,8 @@ class HealthCheckService:
 
     default_required_checks = [
         "engine_latency_health",
-        "config_health",
+        "runtime_config_health",
+        "sqlcipher_config_health",
         "chromadb_health",
         "azkv_health",
         "webex_health",
@@ -106,7 +109,7 @@ class HealthCheckService:
     
     # service  / dbhealth check
     
-    def perform_config_health_check(self) -> dict:
+    def perform_runtime_config_health_check(self) -> dict:
         """
         Perform a health check on the configuration service by attempting to retrieve safe variables.
         
@@ -123,6 +126,32 @@ class HealthCheckService:
                 "status": "unhealthy",
                 "message": str(e)
             }   
+    def perform_sqlcipher_config_health_check(self) -> dict:
+        """
+        Perform a health check on the SQLCipher configuration by attempting to set and get a test variable.
+        
+        Returns:
+            A dictionary with the health status if successful, or an error message if not.
+        """
+        try:
+            test_key = "sqlcipher_health_check_test_key"
+            test_value = "sqlcipher_health_check_test_value"
+            LocalConfigService.set_val(test_key, test_value)
+            retrieved_value = LocalConfigService.get_val(test_key)
+            if retrieved_value == test_value:
+                return {
+                    "status": "healthy"
+                }
+            else:
+                return {
+                    "status": "unhealthy",
+                    "message": "Failed to retrieve correct value from SQLCipher"
+                }
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "message": str(e)
+            }
     def perform_chromadb_health_check(self, chroma_service: ChromaDBService) -> dict:
         """
         Perform a health check on the ChromaDB service by attempting to retrieve collection information.
@@ -249,7 +278,8 @@ class HealthCheckService:
         
         all_health = {
             "engine_latency_health": self.perform_latency_check(),
-            "config_health": self.perform_config_health_check(),
+            "runtime_config_health": self.perform_runtime_config_health_check(),
+            "sqlcipher_config_health": self.perform_sqlcipher_config_health_check(),
             "chromadb_health": self.perform_chromadb_health_check(chroma_service),
             "azkv_health": self.perform_azure_keyvault_health_check(),
             "openvino_health": self.perform_openvino_health_check(),
@@ -268,7 +298,8 @@ class HealthCheckService:
             "status": overall_status,
             "required_checks": self.required_checks,
             "engine_latency_health": all_health["engine_latency_health"],
-            "config_health": all_health["config_health"],
+            "runtime_config_health": all_health["runtime_config_health"],
+            "sqlcipher_config_health": all_health["sqlcipher_config_health"],
             "chromadb_health": all_health["chromadb_health"],
             "azure_keyvault_health": all_health["azkv_health"],
             "openvino_health": all_health["openvino_health"],
