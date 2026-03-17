@@ -30,6 +30,7 @@ from .model.relation import Relation
 from .model.recentcall import RecentCall
 
 from .blueprint.account_bp import account_bp
+from .blueprint.admin_account_bp import admin_account_bp
 from .blueprint.chat_bp import chat_bp
 from .blueprint.chroma_bp import chroma_bp, chroma_service
 from .blueprint.dashboard_bp import dashboard_bp
@@ -92,6 +93,7 @@ health_check_service = HealthCheckService()
 
 # register blue prints for API endpoints
 application.register_blueprint(account_bp)
+application.register_blueprint(admin_account_bp)
 application.register_blueprint(chat_bp)
 application.register_blueprint(chroma_bp)
 application.register_blueprint(dashboard_bp)

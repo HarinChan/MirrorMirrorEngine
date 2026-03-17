@@ -23,4 +23,3 @@ azure-keyvault-secrets
 asyncio
 Flask[async]
 sqlcipher3
-threading

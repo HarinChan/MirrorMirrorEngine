@@ -73,7 +73,7 @@ class AzureKeyVaultService:
             retrieved_secret = client.get_secret(secret_name)
             return retrieved_secret.value
         except Exception as e:
-            print(f"Failed to fetch secret '{secret_name}'. Returning default value {default_value}.")
+            # print(f"Failed to fetch secret '{secret_name}'. Returning default value {default_value}.")
             return default_value
 
     @staticmethod

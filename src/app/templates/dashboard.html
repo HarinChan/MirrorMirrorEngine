@@ -129,6 +129,38 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm mb-4 position-relative">
+                <div class="loading-overlay" id="adminLoader" style="display:none;">
+                    <div class="spinner-border text-azure" role="status"></div>
+                </div>
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2 text-azure"></i>Admin Accounts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 pb-3 border-bottom">
+                        <h6 class="small fw-bold text-uppercase text-muted mb-3">Add New Admin</h6>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <input type="email" id="adminEmail" class="form-control" placeholder="Email Address">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="password" id="adminPassword" class="form-control" placeholder="Password">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-azure w-100" onclick="addAdminAccount()">Add</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="small fw-bold text-uppercase text-muted mb-2">Existing Admins</h6>
+                    <div id="adminAccountList" class="list-group list-group-flush">
+                        <div class="text-center py-3 text-muted">Loading accounts...</div>
+                    </div>
+                </div>
+            </div>
+        </div>  
     </div>
 </div>
 
@@ -419,6 +451,120 @@
         document.getElementById('configValue').value = value;
         document.getElementById('updateCard').scrollIntoView({ behavior: 'smooth' });
     }
+
+    // Helper: SHA-256 hashing for the password
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // 1. ADD Admin Account
+    async function addAdminAccount() {
+        const email = document.getElementById('adminEmail').value.trim();
+        const rawPassword = document.getElementById('adminPassword').value;
+        const loader = document.getElementById('adminLoader');
+
+        if (!email || !rawPassword) {
+            alert("Please enter both email and password.");
+            return;
+        }
+
+        loader.style.display = 'flex';
+        try {
+            const hashedPassword = await sha256(rawPassword); // Client-side hash
+
+            const response = await fetch('/api/config/admin-accounts', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email, password: hashedPassword })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert("Admin added successfully!");
+                document.getElementById('adminEmail').value = '';
+                document.getElementById('adminPassword').value = '';
+                refreshAdminList(); // Refresh the list
+            } else {
+                alert(`Error: ${result.msg}`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Failed to add admin.");
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    // 2. REMOVE Admin Account
+    async function removeAdminAccount(email) {
+        if (!confirm(`Are you sure you want to remove ${email}?`)) return;
+
+        try {
+            const response = await fetch('/api/config/admin-accounts', {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email })
+            });
+
+            if (response.ok) {
+                refreshAdminList();
+            } else {
+                const res = await response.json();
+                alert(res.msg);
+            }
+        } catch (e) {
+            alert("Failed to remove account.");
+        }
+    }
+
+    // 3. REFRESH Admin List
+    // This leverages your existing /api/config endpoint 
+    // assuming ADMIN_ACCOUNTS is in the whitelist.
+    async function refreshAdminList() {
+        const listContainer = document.getElementById('adminAccountList');
+        try {
+            const response = await fetch('/api/config/admin-accounts', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+
+            if (!response.ok) throw new Error('Unauthorized or Server Error');
+
+            const data = await response.json();
+            
+            // The backend now returns: {"admin_accounts": ["email1@test.com", "email2@test.com"]}
+            // data.admin_accounts is already an array, no JSON.parse needed.
+            const accounts = data.admin_accounts || [];
+
+            // Map directly over the array of emails
+            listContainer.innerHTML = accounts.map(email => `
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span class="text-dark">
+                        <i class="bi bi-shield-check me-2 text-success"></i>${email}
+                    </span>
+                    <button class="btn btn-sm btn-outline-danger border-0" 
+                            onclick="removeAdminAccount('${email}')" 
+                            title="Remove Admin">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `).join('') || '<div class="text-center py-3 text-muted">No additional admins found.</div>';
+
+        } catch (e) {
+            console.error("Admin List Error:", e);
+            listContainer.innerHTML = `<div class="text-danger small">Failed to load admin list.</div>`;
+        }
+    }
+    // Initialize
+    document.addEventListener('DOMContentLoaded', refreshAdminList);
 
     // Initial Load
     document.addEventListener('DOMContentLoaded', fetchData);
