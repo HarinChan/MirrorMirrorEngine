@@ -2,11 +2,13 @@
 from typing import List, Dict, Optional, Any
 import uuid
 import chromadb
+import os
 from chromadb.api.types import Metadata
+from ..config import Config
 
 class ChromaDBService:
     """Service for managing document embeddings with ChromaDB"""
-    def __init__(self, persist_directory: str = "./chroma_db", collection_name: str = "documents"):
+    def __init__(self, persist_directory: str = None, collection_name: str = "documents"):
         """
         Initialize ChromaDB client and collection
         
@@ -14,6 +16,13 @@ class ChromaDBService:
             persist_directory: Directory to persist ChromaDB data
             collection_name: Name of the collection to use
         """
+        if persist_directory is None:
+            appdata_folder = Config.get_variable("APPDATA_FOLDER", "./appdata")
+            persist_directory = os.path.join(appdata_folder, "chroma_db")
+
+        if not os.path.exists(persist_directory):
+            os.makedirs(persist_directory)
+
         self.client: Any = chromadb.PersistentClient(path=persist_directory)
         self.collection_name: str = collection_name
         # Get or create collection with default embedding function

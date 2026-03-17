@@ -11,6 +11,8 @@ from ..model.meeting import Meeting
 from ..model.meetinginvitation import MeetingInvitation
 from ..model.profile import Profile
 
+from ..config import Config
+
 from ..service.webex_service import WebexService
 from ..service.meeting_helper import _get_primary_profile, _get_participant_count, _ensure_meeting_created_with_webex, _meeting_has_profile, _normalize_invitee_ids, _serialize_meeting, _sync_meeting_in_chroma
 
@@ -18,9 +20,9 @@ webex_bp = Blueprint('webex', __name__)
 
 webex_service = WebexService()
 
-MEETING_MIN_DURATION_MINUTES = 15
-MEETING_MAX_DURATION_MINUTES = 60
-MEETING_MAX_ADVANCE_DAY = 14
+MEETING_MIN_DURATION_MINUTES = Config.get_variable("MEETING_MIN_DURATION_MINUTES", 15)
+MEETING_MAX_DURATION_MINUTES = Config.get_variable("MEETING_MAX_DURATION_MINUTES", 60)
+MEETING_MAX_ADVANCE_DAY = Config.get_variable("MEETING_MAX_ADVANCE_DAY", 14)
 
 def validate_meeting_schedule(start_time: datetime, end_time: datetime):
     if end_time <= start_time:

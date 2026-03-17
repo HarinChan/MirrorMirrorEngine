@@ -3,12 +3,14 @@ ChromaDB API endpoints.
 """
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-
+from ..config import Config
 from ..service.chromadb_service import ChromaDBService
 
-chroma_bp = Blueprint('chroma', __name__)
+import os
 
-chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="penpals_documents")
+chroma_bp = Blueprint('chroma', __name__)
+appdata_folder = Config.get_variable("APPDATA_FOLDER", "./appdata")  
+chroma_service = ChromaDBService(persist_directory=os.path.join(appdata_folder, "chroma_db"), collection_name="penpals_documents")
 
 @chroma_bp.route('/api/documents/upload', methods=['POST'])
 def upload_documents():

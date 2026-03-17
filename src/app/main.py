@@ -65,15 +65,13 @@ def refresh_config():
     application.config['JWT_SECRET_KEY'] = Config.get_variable('JWT_SECRET_KEY',"TEST_JWT_KEY")
     application.config['PREFERRED_URL_SCHEME'] = Config.get_variable('PREFERRED_URL_SCHEME', 'http')
 
-db_uri = Config.get_variable('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
-if db_uri.startswith('sqlite:///') and not db_uri.startswith('sqlite:////'):
-    rel_path = db_uri.replace('sqlite:///', '', 1)
-    # Ensure the directory exists
-    db_dir = os.path.dirname(rel_path)
-    if db_dir:
-        os.makedirs(db_dir, exist_ok=True)
-    abs_path = os.path.abspath(rel_path)
-    db_uri = f'sqlite:///{abs_path}'
+
+# set SQLALCHEMY_DATABASE_URI relative to appdata folder
+appdata_dir = Config.get_variable("APPDATA_FOLDER", "./appdata")
+db_filename = "penpals_db/penpals.db"
+db_abs_path = os.path.abspath(os.path.join(appdata_dir, db_filename))
+os.makedirs(os.path.dirname(db_abs_path), exist_ok=True)
+db_uri = f'sqlite:///{db_abs_path}'
 application.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

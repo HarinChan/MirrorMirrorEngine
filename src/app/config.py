@@ -25,7 +25,12 @@ class Config:
             "KEYVAULT_TENANT_ID",
 
             "APPDATA_FOLDER",
-            "SQLCIPHER_KEY"
+            "SQLCIPHER_KEY",
+
+            "TRENDING_LOOKAHEAD_DAYS",
+            "MEETING_MIN_DURATION_MINUTES",
+            "MEETING_MAX_DURATION_MINUTES",
+            "MEETING_MAX_ADVANCE_DAY"
         ],
         "safe_set_keys_whitelist": [  # must not include itself
             "JWT_SECRET_KEY",
@@ -41,7 +46,12 @@ class Config:
             "KEYVAULT_TENANT_ID",
 
             "APPDATA_FOLDER",
-            "SQLCIPHER_KEY"
+            "SQLCIPHER_KEY",
+
+            "TRENDING_LOOKAHEAD_DAYS",
+            "MEETING_MIN_DURATION_MINUTES",
+            "MEETING_MAX_DURATION_MINUTES",
+            "MEETING_MAX_ADVANCE_DAY"
         ],
 
         "APPDATA_FOLDER": os.path.join((os.getenv("LOCALAPPDATA") or os.getenv("APPDATA") or os.path.expanduser("~/.config")), "MirrorMirrorEngine")

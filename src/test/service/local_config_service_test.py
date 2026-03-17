@@ -6,6 +6,8 @@ import os
 @pytest.fixture(scope="module", autouse=True)
 def setup_sqlcipher():
     # Initialize sqlcipher and load existing config variables before tests
+    # change appdata folder to local
+    Config.settings["APPDATA_FOLDER"] = os.path.join(os.getcwd(), "test_appdata_folder")
     LocalConfigService.initialize_sqlcipher()
     yield
     # Cleanup after tests if needed
