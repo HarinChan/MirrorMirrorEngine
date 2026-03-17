@@ -319,6 +319,7 @@ def get_current_user():
 
 @application.route('/api/health', methods=['GET'])
 def health_check():
+    # requires access to other service, hence in main rather than blueprint
     health_status = health_check_service.perform_comprehensive_health_check(chroma_service, webex_service, db)
     status = health_status.get("status", "unhealthy")
 
@@ -343,6 +344,7 @@ def health_check():
 @application.route('/api/latency-history', methods=['GET'])
 @jwt_required()
 def get_latency_history():
+    # requires healthcheck service, hence in main
     claims = get_jwt()
     if claims.get("role") != "admin":
         return jsonify({"msg": "Admin access denied"}), 403
@@ -377,6 +379,7 @@ def admin_config_status():
 @application.route('/api/config', methods=['POST'])
 @jwt_required()
 def admin_config_update():
+    # requires webex_service and refreshing main config, hence in main
     claims = get_jwt()
     if claims.get("role") != "admin":
         return jsonify({"msg": "Admin access denied"}), 403

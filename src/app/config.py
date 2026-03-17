@@ -2,6 +2,7 @@ import os
 import re
 from dotenv import load_dotenv
 from .service.azure_keyvault_service import AzureKeyVaultService as azkv_service
+from .service.local_config_service import LocalConfigService
 
 load_dotenv()
 
@@ -22,6 +23,9 @@ class Config:
             "KEYVAULT_CLIENT_ID",
             "KEYVAULT_CLIENT_SECRET",
             "KEYVAULT_TENANT_ID",
+
+            "APPDATA_FOLDER",
+            "SQLCIPHER_KEY"
         ],
         "safe_set_keys_whitelist": [  # must not include itself
             "JWT_SECRET_KEY",
@@ -35,7 +39,12 @@ class Config:
             "KEYVAULT_CLIENT_ID",
             "KEYVAULT_CLIENT_SECRET",
             "KEYVAULT_TENANT_ID",
-        ]
+
+            "APPDATA_FOLDER",
+            "SQLCIPHER_KEY"
+        ],
+
+        "APPDATA_FOLDER": os.path.join((os.getenv("LOCALAPPDATA") or os.getenv("APPDATA") or os.path.expanduser("~/.config")), "MirrorMirrorEngine")
     }
 
     @staticmethod
@@ -71,7 +80,7 @@ class Config:
         return True
 
     @staticmethod
-    def set_variable(name: str, value: str, ignore_azure: bool=False):
+    def set_variable(name: str, value: str, ignore_azure: bool=False, ignore_sqlcipher: bool=False):
         """
             Set an environment variable (for testing or dynamic config)
             Set for the following only:
@@ -79,19 +88,24 @@ class Config:
                 `keyvault` tryset if can
             Does not alter environmental variable.
         """
-        
-        Config.settings[name] = value
+        if name == "FERNET_KEY":
+            Config.settings[name] = Fernet.generate_key().decode()
+        else:
+            Config.settings[name] = value
         if not ignore_azure:
             azkv_service.update_secret(name,value)
+        if not ignore_sqlcipher:
+            LocalConfigService.set_val(name, value)
 
     @staticmethod
-    def get_variable(name:str, default=None, ignore_azure: bool=False) -> str:
+    def get_variable(name:str, default=None, ignore_azure: bool=False, ignore_sqlcipher: bool=False) -> str:
         """
             Get the environment variable.
             Try to retrieve environmental variables in the following order:
             1. OS Environment
-            2. Config
-            3. Azure Key Vault (if not ignored and credentials are set)
+            2. SQLCipher encrypted database
+            3. Config.py `settings` dictionary
+            4. Azure Key Vault (if not ignored and credentials are set)
             Returns the default value if the variable is not found in any source and default is provided.
             Raises an error if the variable is required but not found and no default is provided
         """
@@ -99,6 +113,10 @@ class Config:
         variable = os.getenv(name, None)
         if variable:
             return variable
+        if not ignore_sqlcipher:
+            variable = LocalConfigService.get_val(name)
+            if variable:
+                return variable
         if name in Config.settings:
             return Config.settings[name]
         if not ignore_azure:

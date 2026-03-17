@@ -22,3 +22,4 @@ azure-identity
 azure-keyvault-secrets
 asyncio
 Flask[async]
+sqlcipher3

@@ -32,16 +32,16 @@ class AzureKeyVaultService:
         if AzureKeyVaultService.static_credential != None:
             return AzureKeyVaultService.static_credential
         if AzureKeyVaultService.max_credential_attempts is None:
-            AzureKeyVaultService.max_credential_attempts = Config.get_variable("KEYVAULT_MAX_CREDENTIAL_ATTEMPTS", 3, True)
+            AzureKeyVaultService.max_credential_attempts = Config.get_variable("KEYVAULT_MAX_CREDENTIAL_ATTEMPTS", 3, True, False)
         if AzureKeyVaultService.get_credentials_attempt >= AzureKeyVaultService.max_credential_attempts:
             print("WARNING: Maximum attempts to get Azure Key Vault credentials reached. Returning None.")
             return None
         AzureKeyVaultService.get_credentials_attempt += 1
 
         # can attempt to fetch
-        tenant_id=Config.get_variable("KEYVAULT_TENANT_ID","",True)
-        client_id=Config.get_variable("KEYVAULT_CLIENT_ID","",True)
-        client_secret=Config.get_variable("KEYVAULT_CLIENT_SECRET","",True)
+        tenant_id=Config.get_variable("KEYVAULT_TENANT_ID","",True,False) # ignore azure but tries LocalConfigService
+        client_id=Config.get_variable("KEYVAULT_CLIENT_ID","",True,False) # ignore azure but tries LocalConfigService
+        client_secret=Config.get_variable("KEYVAULT_CLIENT_SECRET","",True,False) # ignore azure but tries LocalConfigService
 
         if not (tenant_id == "" or client_id=="" or client_secret==""):
             credential = ClientSecretCredential(
