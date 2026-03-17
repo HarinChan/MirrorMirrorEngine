@@ -42,6 +42,39 @@
 
 <div class="container">
     <div class="row g-4">
+
+        <!-- Admin Accounts Card -->
+        <div class="col-12">
+            <div class="card shadow-sm mb-4 position-relative">
+                <div class="loading-overlay" id="adminLoader" style="display:none;">
+                    <div class="spinner-border text-azure" role="status"></div>
+                </div>
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2 text-azure"></i>Admin Accounts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 pb-3 border-bottom">
+                        <h6 class="small fw-bold text-uppercase text-muted mb-3">Add New Admin</h6>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <input type="email" id="adminEmail" class="form-control" placeholder="Email Address">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="password" id="adminPassword" class="form-control" placeholder="Password">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-azure w-100" onclick="addAdminAccount()">Add</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="small fw-bold text-uppercase text-muted mb-2">Existing Admins</h6>
+                    <div id="adminAccountList" class="list-group list-group-flush">
+                        <div class="text-center py-3 text-muted">Loading accounts...</div>
+                    </div>
+                </div>
+            </div>
+        </div> 
         
         <div class="col-lg-5">
             <!-- Update Current Variables Card -->
@@ -76,15 +109,25 @@
                             </button>
                         </div>
                     </div>
-                    <div class="mb-3 form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="ignoreAzureToggle">
-                        <label class="form-check-label small" for="ignoreAzureToggle">
-                            Skip Key Vault Update
-                        </label>
-                        <div class="form-text text-muted" style="font-size: 0.75rem;">
+
+                    <div class="mb-3 p-3 border rounded bg-light-subtle">
+                        <div class="form-check form-switch d-flex align-items-center mb-1">
+                            <input class="form-check-input me-3" type="checkbox" id="ignoreAzureToggle" role="switch" style="margin-top: 0;">
+                            <label class="form-check-label small fw-bold" for="ignoreAzureToggle" style="cursor: pointer;">
+                                Skip Key Vault Update
+                            </label>
+                        </div>
+
+                        <div id="blacklistWarning" class="form-text text-warning d-none mb-1 ms-1">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            <span style="font-size: 0.75rem;">This variable is restricted from Keyvault writing.</span>
+                        </div>
+
+                        <div class="form-text text-muted ms-1" style="font-size: 0.75rem; line-height: 1.2;">
                             If enabled, changes only apply to local configuration.
                         </div>
                     </div>
+
                     <button class="btn btn-azure w-100 py-2" onclick="updateConfig()">
                         Update Settings
                     </button>
@@ -128,39 +171,7 @@
                     </ul>
                 </div>
             </div>
-        </div>
-
-        <div class="col-12">
-            <div class="card shadow-sm mb-4 position-relative">
-                <div class="loading-overlay" id="adminLoader" style="display:none;">
-                    <div class="spinner-border text-azure" role="status"></div>
-                </div>
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2 text-azure"></i>Admin Accounts</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4 pb-3 border-bottom">
-                        <h6 class="small fw-bold text-uppercase text-muted mb-3">Add New Admin</h6>
-                        <div class="row g-2">
-                            <div class="col-md-5">
-                                <input type="email" id="adminEmail" class="form-control" placeholder="Email Address">
-                            </div>
-                            <div class="col-md-5">
-                                <input type="password" id="adminPassword" class="form-control" placeholder="Password">
-                            </div>
-                            <div class="col-md-2">
-                                <button class="btn btn-azure w-100" onclick="addAdminAccount()">Add</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <h6 class="small fw-bold text-uppercase text-muted mb-2">Existing Admins</h6>
-                    <div id="adminAccountList" class="list-group list-group-flush">
-                        <div class="text-center py-3 text-muted">Loading accounts...</div>
-                    </div>
-                </div>
-            </div>
-        </div>  
+        </div> 
     </div>
 </div>
 
@@ -170,6 +181,31 @@
     const API_BASE = '/api';
     let chartInstance = null;
     const getAuthToken = () => localStorage.getItem('access_token');
+
+    // Store the blacklist globally after fetching it in loadConfigStatus
+    let keyvaultBlacklist = [];
+
+    // Add an event listener to the input field
+    document.getElementById('configKey').addEventListener('input', function(e) {
+        const selectedKey = e.target.value;
+        const azureToggle = document.getElementById('ignoreAzureToggle');
+        const toggleLabel = document.querySelector('label[for="ignoreAzureToggle"]');
+
+        if (keyvaultBlacklist.includes(selectedKey)) {
+            // 1. Force the toggle to True (Checked)
+            azureToggle.checked = true;
+            
+            // 2. Disable the toggle so the user can't uncheck it
+            azureToggle.disabled = true;
+            
+            // 3. Optional: Add visual feedback to the label
+            toggleLabel.innerHTML = 'Skip Key Vault Update <span class="text-warning">(Enforced)</span>';
+        } else {
+            // Reset if the key is not blacklisted
+            azureToggle.disabled = false;
+            toggleLabel.innerHTML = 'Skip Key Vault Update';
+        }
+    });
 
     function logout() {
         localStorage.removeItem('access_token');
@@ -352,17 +388,18 @@
 
     // 2. Fetch and Render Current Variables
     async function fetchData() {
-        const listContainer = document.getElementById('configList');
+        const configContainer = document.getElementById('configList');
         const comboDataList = document.getElementById('keyWhitelist');
-        
+
         try {
             const response = await fetch('/api/config', {
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${getAuthToken()}` }
             });
 
+            
             if (!response.ok) throw new Error('Failed to fetch config');
-
+            
             const data = await response.json();
             
             // 1. Populate the Combo Box (Datalist) from the SET whitelist
@@ -378,25 +415,39 @@
                 });
                 console.log("Datalist populated with:", data.safe_set_keys_whitelist);
             }
+            const variables = data.current_safe_variables || {};
+            const blacklist = data.keyvault_write_blacklist || [];
+            keyvaultBlacklist = data.keyvault_write_blacklist || [];
 
-            // 2. Render the Current Variables List
-            const vars = data.current_safe_variables;
-            listContainer.innerHTML = Object.entries(vars).map(([key, value]) => `
-                <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <div>
-                        <code class="fw-bold text-azure">${key}</code>
-                        <div class="small text-muted text-truncate" style="max-width: 250px;">${value}</div>
+            configContainer.innerHTML = Object.entries(variables).map(([key, value]) => {
+                // Check if this specific key is in the write blacklist
+                const isBlacklisted = blacklist.includes(key);
+                
+                const badge = isBlacklisted 
+                    ? `<span class="badge rounded-pill bg-secondary-subtle text-secondary border ms-2">
+                        <i class="bi bi-lock-fill me-1"></i>Local Only
+                    </span>` 
+                    : '';
+
+                return `
+                    <div class="list-group-item py-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <code class="fw-bold text-azure" style="font-size: 1.1rem;">${key}${badge}</code>
+                            <button class="btn btn-sm btn-outline-light text-dark" onclick="fillForm('${key}', '${value}')">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                        </div>
+                        <code class="text-muted small">${value}</code>
                     </div>
-                    <button class="btn btn-sm btn-outline-light text-dark" onclick="fillForm('${key}', '${value}')">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                </div>
-            `).join('') || '<div class="p-4 text-center text-muted">No variables found.</div>';
+                `;
+            }).join('') || '<div class="text-center py-3">No variables found.</div>';
 
-        } catch (error) {
-            listContainer.innerHTML = `<div class="p-4 text-center text-danger">Error: ${error.message}</div>`;
+        } catch (e) {
+            console.error(e);
+            configContainer.innerHTML = `<div class="alert alert-danger">Error loading configuration.</div>`;
         }
     }
+        
     // 3. Update Configuration (POST)
     async function updateConfig() {
         const key = document.getElementById('configKey').value.trim();
@@ -449,7 +500,12 @@
     function fillForm(key, value) {
         document.getElementById('configKey').value = key;
         document.getElementById('configValue').value = value;
-        document.getElementById('updateCard').scrollIntoView({ behavior: 'smooth' });
+
+        const keyInput = document.getElementById('configKey');
+        keyInput.value = key;
+        keyInput.dispatchEvent(new Event('input'));
+
+        document.getElementById('updateCard').scrollIntoView({ behavior: 'smooth' });        
     }
 
     // Helper: SHA-256 hashing for the password

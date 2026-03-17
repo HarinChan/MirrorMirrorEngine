@@ -371,7 +371,8 @@ def admin_config_status():
 
     status = {
         "safe_set_keys_whitelist": Config.settings["safe_set_keys_whitelist"], # list[str]
-        "current_safe_variables": Config.get_all_safe_variables(False,False) # dictionary{str:str}
+        "current_safe_variables": Config.get_all_safe_variables(False,False), # dictionary{str:str}
+        "keyvault_write_blacklist": Config.settings["KEYVAULT_WRITE_BLACKLIST"] # list[str]
     }
     return jsonify(status), 200
 

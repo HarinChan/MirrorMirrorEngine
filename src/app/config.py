@@ -53,6 +53,14 @@ class Config:
             "MEETING_MAX_DURATION_MINUTES",
             "MEETING_MAX_ADVANCE_DAY"
         ],
+        "KEYVAULT_WRITE_BLACKLIST": [
+            "APPDATA_FOLDER", # local config only
+            "SQLCIPHER_KEY",  # This is a critical secret that should not be stored
+            # key values for keyvault identity.
+            "KEYVAULT_CLIENT_ID",
+            "KEYVAULT_CLIENT_SECRET",
+            "KEYVAULT_TENANT_ID",
+        ],
 
         "APPDATA_FOLDER": os.path.join((os.getenv("LOCALAPPDATA") or os.getenv("APPDATA") or os.path.expanduser("~/.config")), "MirrorMirrorEngine")
     }
@@ -103,7 +111,10 @@ class Config:
         else:
             Config.settings[name] = value
         if not ignore_azure:
-            azkv_service.update_secret(name,value)
+            if name in Config.settings["KEYVAULT_WRITE_BLACKLIST"]:
+                print(f"Attempted to set variable '{name}' which is in the Key Vault write blacklist. Skipping writing to Key Vault.")
+            else:
+                azkv_service.update_secret(name,value)
         if not ignore_sqlcipher:
             LocalConfigService.set_val(name, value)
 
