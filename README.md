@@ -10,10 +10,11 @@ When login, dashboard page is available at: `/admin/dashboard`
 
 #### **Dashboard Functions**
 - View Health Checks
-- View Current Configuration Settings
-- Update Runtime Configuration Settings
+- View Current Configuration Settings.
+- Update Runtime Configuration Settings.
   - Update Keyvault Values
 - Add or Delete Admin Accounts
+- Factory Reset back to installation status.
 
 ## API Documentation
 

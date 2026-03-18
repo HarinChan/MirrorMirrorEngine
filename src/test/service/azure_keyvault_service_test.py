@@ -4,7 +4,7 @@ from src.app.service.azure_keyvault_service import AzureKeyVaultService
 def test_azure_secret_rotation():
     # requires setting envirobmental variables for KEYVAULT_TENANT_ID, KEYVAULT_CLIENT_ID, and KEYVAULT_CLIENT_SECRET
     # 1. Arrange
-    test_name = "TestSecret"
+    test_name = "PytestSecret"
     test_value = "Updated-Value-2026"
     
     # 2. Act
