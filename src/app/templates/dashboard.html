@@ -595,24 +595,35 @@
             if (!response.ok) throw new Error('Unauthorized or Server Error');
 
             const data = await response.json();
-            
-            // The backend now returns: {"admin_accounts": ["email1@test.com", "email2@test.com"]}
-            // data.admin_accounts is already an array, no JSON.parse needed.
             const accounts = data.admin_accounts || [];
+            
+            // Check if we are at the minimum requirement
+            const isOnlyAdmin = accounts.length <= 1;
 
-            // Map directly over the array of emails
-            listContainer.innerHTML = accounts.map(email => `
-                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span class="text-dark">
-                        <i class="bi bi-shield-check me-2 text-success"></i>${email}
-                    </span>
-                    <button class="btn btn-sm btn-outline-danger border-0" 
+            listContainer.innerHTML = accounts.map(email => {
+                // Logic for the action button
+                const actionButton = isOnlyAdmin 
+                    ? `<div class="d-flex align-items-center">
+                            <small class="text-muted me-2" style="font-size: 0.7rem;">Cannot delete the only account</small>
+                            <button class="btn btn-sm btn-outline-secondary border-0 opacity-50" disabled>
+                                <i class="bi bi-trash"></i>
+                            </button>
+                    </div>`
+                    : `<button class="btn btn-sm btn-outline-danger border-0" 
                             onclick="removeAdminAccount('${email}')" 
                             title="Remove Admin">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            `).join('') || '<div class="text-center py-3 text-muted">No additional admins found.</div>';
+                            <i class="bi bi-trash"></i>
+                    </button>`;
+
+                return `
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-dark">
+                            <i class="bi bi-shield-check me-2 text-success"></i>${email}
+                        </span>
+                        ${actionButton}
+                    </div>
+                `;
+            }).join('') || '<div class="text-center py-3 text-muted">No additional admins found.</div>';
 
         } catch (e) {
             console.error("Admin List Error:", e);
