@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from dotenv import load_dotenv
 from .service.azure_keyvault_service import AzureKeyVaultService as azkv_service
 from .service.local_config_service import LocalConfigService
@@ -24,7 +25,6 @@ class Config:
             "KEYVAULT_CLIENT_SECRET",
             "KEYVAULT_TENANT_ID",
 
-            "APPDATA_FOLDER",
             "SQLCIPHER_KEY",
 
             "TRENDING_LOOKAHEAD_DAYS",
@@ -45,7 +45,6 @@ class Config:
             "KEYVAULT_CLIENT_SECRET",
             "KEYVAULT_TENANT_ID",
 
-            "APPDATA_FOLDER",
             "SQLCIPHER_KEY",
 
             "TRENDING_LOOKAHEAD_DAYS",
@@ -54,16 +53,78 @@ class Config:
             "MEETING_MAX_ADVANCE_DAY"
         ],
         "KEYVAULT_WRITE_BLACKLIST": [
-            "APPDATA_FOLDER", # local config only
             "SQLCIPHER_KEY",  # This is a critical secret that should not be stored
+            "JWT_SECRET_KEY",
+            "FLASK_SECRET_KEY",
             # key values for keyvault identity.
             "KEYVAULT_CLIENT_ID",
             "KEYVAULT_CLIENT_SECRET",
             "KEYVAULT_TENANT_ID",
         ],
+        # Set up keys
+        "SUGGESTED_SETUP_KEYs": [ # must be different from required keys
+            "WEBEX_ACCESS_TOKEN",
+            "WEBEX_CLIENT_ID",
+            "WEBEX_CLIENT_SECRET",
+            "WEBEX_REDIRECT_URI",
 
+            "KEYVAULT_CLIENT_ID",
+            "KEYVAULT_CLIENT_SECRET",
+            "KEYVAULT_TENANT_ID",
+        ],
+        "REQUIRED_SETUP_KEYs": [
+            "JWT_SECRET_KEY",
+            "FLASK_SECRET_KEY",
+            "SQLCIPHER_KEY",
+        ],
+        "HASHABLE_SETUP_KEYs": [
+            "JWT_SECRET_KEY",
+            "FLASK_SECRET_KEY",
+            "SQLCIPHER_KEY",
+        ],
+        "INITIAL_SETUP_KEY": "MirrorMirrorSetUpKey",
         "APPDATA_FOLDER": os.path.join((os.getenv("LOCALAPPDATA") or os.getenv("APPDATA") or os.path.expanduser("~/.config")), "MirrorMirrorEngine")
     }
+
+    @staticmethod
+    def initial_setup_completed() -> bool:
+        """
+        Checks if the initial setup is completed by verifying that all 
+        required keys are set and the admin account is valid.
+        """
+        missing_items = []
+
+        # 1. Check all standard required keys
+        for key in Config.settings.get("REQUIRED_SETUP_KEYs", []):
+            try:
+                value = Config.get_variable(key, "")
+                if not value:
+                    missing_items.append(f"Missing required variable: '{key}'")
+            except EnvironmentError:
+                missing_items.append(f"Environment error fetching: '{key}'")
+
+        # 2. Specific check for admin account existence and format
+        admin_accounts_raw = Config.get_variable("ADMIN_ACCOUNTS", "")
+        
+        if not admin_accounts_raw:
+            missing_items.append("Missing variable: 'ADMIN_ACCOUNTS'")
+        else:
+            try:
+                admin_account_dict = json.loads(admin_accounts_raw)
+                if not isinstance(admin_account_dict, dict) or len(admin_account_dict) == 0:
+                    missing_items.append("Invalid state: 'ADMIN_ACCOUNTS' is empty or not a dictionary")
+            except json.JSONDecodeError:
+                missing_items.append("Format error: 'ADMIN_ACCOUNTS' contains invalid JSON")
+
+        # 3. Report and Return
+        if missing_items:
+            print("\n--- [MirrorMirror Engine] Initial Setup Incomplete ---")
+            for item in missing_items:
+                print(f" • {item}")
+            print("------------------------------------------------------\n")
+            return False
+
+        return True
 
     @staticmethod
     def get_all_safe_variables(ignore_azure: bool=False, ignore_sqlcipher: bool=False) -> dict:

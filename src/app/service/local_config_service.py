@@ -68,3 +68,19 @@ class LocalConfigService:
             return result[0]
         else:
             return default
+    
+    @staticmethod
+    def delete_val(key: str):
+        if not LocalConfigService.sqlcipher_initialized:
+            LocalConfigService.initialize_sqlcipher()
+        cursor = LocalConfigService.conn.cursor()
+        cursor.execute("DELETE FROM kv WHERE key = ?", (key,))
+        LocalConfigService.conn.commit()
+    
+    @staticmethod
+    def delete_all():
+        if not LocalConfigService.sqlcipher_initialized:
+            LocalConfigService.initialize_sqlcipher()
+        cursor = LocalConfigService.conn.cursor()
+        cursor.execute("DELETE FROM kv")
+        LocalConfigService.conn.commit()

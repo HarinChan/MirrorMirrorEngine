@@ -21,6 +21,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from .service.health_check_service import HealthCheckService
+from .service.azure_keyvault_service import AzureKeyVaultService as azkv_service
 
 from .model import db
 from .model.account import Account
@@ -35,6 +36,7 @@ from .blueprint.chat_bp import chat_bp
 from .blueprint.chroma_bp import chroma_bp, chroma_service
 from .blueprint.dashboard_bp import dashboard_bp
 from .blueprint.friends_bp import friends_bp
+from .blueprint.initial_setup_bp import initial_setup_bp
 from .blueprint.meeting_bp import meeting_bp
 from .blueprint.messaging_bp import messaging_bp
 from .blueprint.notification_bp import notification_bp
@@ -98,6 +100,7 @@ application.register_blueprint(chat_bp)
 application.register_blueprint(chroma_bp)
 application.register_blueprint(dashboard_bp)
 application.register_blueprint(friends_bp)
+application.register_blueprint(initial_setup_bp)
 application.register_blueprint(meeting_bp)
 application.register_blueprint(messaging_bp)
 application.register_blueprint(notification_bp)
@@ -398,6 +401,7 @@ def admin_config_update():
     # refresh all config
     refresh_config()
     webex_service.refresh_config()
+    azkv_service.refresh_config() # reset attempts
 
     return jsonify({"msg": "Configuration updated successfully"}), 200
 

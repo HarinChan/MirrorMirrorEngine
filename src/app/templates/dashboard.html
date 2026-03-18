@@ -20,6 +20,21 @@
         .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
                            background: rgba(255,255,255,0.7); display: none; align-items: center; 
                            justify-content: center; border-radius: 12px; z-index: 10; }
+
+        .border-danger {
+            border-color: #dc3545 !important;
+        }
+
+        /* Makes the card-body flex properly if using it in a grid */
+        .card-body.d-flex {
+            min-height: 180px;
+        }
+
+        /* Subtle hover effect to match your other cards */
+        .card.border-top:hover {
+            transform: translateY(-3px);
+            transition: transform 0.2s ease-in-out;
+        }
     </style>
 </head>
 
@@ -145,6 +160,16 @@
                     <div class="p-4 text-center text-muted">Initialising connection...</div>
                 </div>
             </div>
+            <!-- Factory Reset Card -->
+            <div class="card shadow-sm mb-4 border-top border-3 border-danger">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">System Recovery</h5>
+                </div>                
+                <div class="card-body p-4 text-center">
+                    <p class="small text-muted mb-3">Wipe all data. Irreversible.</p>
+                    <button class="btn btn-sm btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#resetModal">Factory Reset</button>
+                </div>
+            </div>
         </div>
 
         <div class="col-lg-7">
@@ -175,7 +200,28 @@
     </div>
 </div>
 
+
+<div class="modal fade" id="resetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Reset</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Enter <strong>Initial Setup Key</strong> to confirm:</p>
+                <input type="password" id="resetSetupKey" class="form-control">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="executeFactoryReset()">Wipe Everything</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     const API_BASE = '/api';
@@ -184,28 +230,39 @@
 
     // Store the blacklist globally after fetching it in loadConfigStatus
     let keyvaultBlacklist = [];
+    let isKeyvaultHealthy = false;
 
     // Add an event listener to the input field
-    document.getElementById('configKey').addEventListener('input', function(e) {
-        const selectedKey = e.target.value;
+    // Function to handle the "Skip Key Vault" enforcement logic
+    function checkKeyvaultEnforcement() {
+        const selectedKey = document.getElementById('configKey').value;
         const azureToggle = document.getElementById('ignoreAzureToggle');
         const toggleLabel = document.querySelector('label[for="ignoreAzureToggle"]');
+        
+        const isBlacklisted = keyvaultBlacklist.includes(selectedKey);
+        const vaultIsDown = !isKeyvaultHealthy;
 
-        if (keyvaultBlacklist.includes(selectedKey)) {
-            // 1. Force the toggle to True (Checked)
+        if (isBlacklisted || vaultIsDown) {
+            // 1. Force the toggle to True (Skip)
             azureToggle.checked = true;
             
-            // 2. Disable the toggle so the user can't uncheck it
+            // 2. Disable the toggle
             azureToggle.disabled = true;
             
-            // 3. Optional: Add visual feedback to the label
-            toggleLabel.innerHTML = 'Skip Key Vault Update <span class="text-warning">(Enforced)</span>';
+            // 3. Dynamic Visual Feedback
+            let reason = isBlacklisted ? 'Blacklisted' : 'Key Vault Unhealthy';
+            if (isBlacklisted && vaultIsDown) reason = 'Vault Down & Blacklisted';
+            
+            toggleLabel.innerHTML = `Skip Key Vault Update <span class="text-warning small">(${reason} - Enforced)</span>`;
         } else {
-            // Reset if the key is not blacklisted
+            // Reset to normal if everything is fine
             azureToggle.disabled = false;
             toggleLabel.innerHTML = 'Skip Key Vault Update';
         }
-    });
+    }
+
+    // Attach the listener
+    document.getElementById('configKey').addEventListener('input', checkKeyvaultEnforcement);
 
     function logout() {
         localStorage.removeItem('access_token');
@@ -259,6 +316,12 @@
             });
             const data = await response.json();
             const details = data.details;
+
+            // Update the global health flag
+            if (details && details.azure_keyvault_health) {
+                isKeyvaultHealthy = (details.azure_keyvault_health.status === 'healthy');
+            }
+            checkKeyvaultEnforcement();
 
             // 1. Update Overall Badge
             overallStatus.innerText = data.status.toUpperCase();
@@ -630,6 +693,47 @@
             listContainer.innerHTML = `<div class="text-danger small">Failed to load admin list.</div>`;
         }
     }
+    
+    async function executeFactoryReset() {
+        const setupKey = document.getElementById('resetSetupKey').value;
+        const token = localStorage.getItem('access_token');
+
+        if (!setupKey) {
+            alert("Initial Setup Key is required to perform a reset.");
+            return;
+        }
+
+        // Double confirmation via browser native popup
+        if (!confirm("CRITICAL: Are you absolutely sure? This will wipe the database and log you out.")) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/initial-setup/reset', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ initial_setup_key: setupKey })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Success! Clear local storage and redirect
+                localStorage.clear(); 
+                alert("System reset successful. Redirecting to setup...");
+                window.location.href = '/admin/initial-setup';
+            } else {
+                alert(`Reset Failed: ${result.message || result.msg}`);
+            }
+        } catch (error) {
+            console.error("Reset Error:", error);
+            alert("A network error occurred during the reset process.");
+        }
+    }
+    
     // Initialize
     document.addEventListener('DOMContentLoaded', refreshAdminList);
 

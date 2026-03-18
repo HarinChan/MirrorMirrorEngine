@@ -25,6 +25,12 @@ class AzureKeyVaultService:
         return name
 
     @staticmethod
+    def refresh_config():
+        AzureKeyVaultService.static_credential = None
+        AzureKeyVaultService.get_credentials_attempt = 0
+        AzureKeyVaultService.max_credential_attempts = None
+
+    @staticmethod
     def get_credential():
         from ..config import Config
 
@@ -34,7 +40,7 @@ class AzureKeyVaultService:
         if AzureKeyVaultService.max_credential_attempts is None:
             AzureKeyVaultService.max_credential_attempts = Config.get_variable("KEYVAULT_MAX_CREDENTIAL_ATTEMPTS", 3, True, False)
         if AzureKeyVaultService.get_credentials_attempt >= AzureKeyVaultService.max_credential_attempts:
-            print("WARNING: Maximum attempts to get Azure Key Vault credentials reached. Returning None.")
+            # print("WARNING: Maximum attempts to get Azure Key Vault credentials reached. Returning None.")
             return None
         AzureKeyVaultService.get_credentials_attempt += 1
 
@@ -57,7 +63,7 @@ class AzureKeyVaultService:
             AzureKeyVaultService.static_credential = credential
             return credential
         except Exception as e:
-            print(f"WARNING: Azure Key Vault credentials not fully set. Secrets will not be accessible.")
+            # print(f"WARNING: Azure Key Vault credentials not fully set. Secrets will not be accessible.")
             return None
 
     @staticmethod
@@ -65,7 +71,7 @@ class AzureKeyVaultService:
         secret_name = AzureKeyVaultService.sanitize_name(secret_name)
         credential = AzureKeyVaultService.get_credential()
         if credential is None:
-            print("WARNING: Azure Key Vault credentials not set. Returning default value.")
+            # print("WARNING: Azure Key Vault credentials not set. Returning default value.")
             return default_value
         client = SecretClient(vault_url=VAULT_URL, credential=credential)
         try:
