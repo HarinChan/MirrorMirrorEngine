@@ -92,7 +92,6 @@ class AzureKeyVaultService:
         name = AzureKeyVaultService.sanitize_name(name)
         credential = AzureKeyVaultService.get_credential()
         if credential is None:
-            print("WARNING: Azure Key Vault credentials not set. Cannot update secret.")
             # print("WARNING: Azure Key Vault credentials not set. Cannot update secret.")
             return
         client = SecretClient(vault_url=VAULT_URL, credential=credential)
