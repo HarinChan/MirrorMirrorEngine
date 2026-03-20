@@ -400,7 +400,7 @@ def admin_config_update():
     
     # refresh all config
     refresh_config()
-    webex_service.refresh_config()
+    WebexService.refresh_config()
     azkv_service.refresh_config() # reset attempts
 
     return jsonify({"msg": "Configuration updated successfully"}), 200

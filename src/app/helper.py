@@ -3,8 +3,8 @@ import re
 import os
 from typing import List, Dict, Optional
 from datetime import datetime, timezone
-from .service.azure_keyvault_service import AzureKeyVaultService
-from .config import Config
+from contextlib import redirect_stdout
+import io
 
 
 class PenpalsHelper:
@@ -17,11 +17,6 @@ class PenpalsHelper:
         to_remove = len(text) - max_length
         start_index = to_remove // 2
         return text[start_index : start_index + max_length]
-
-    # depreciate this method asap
-    @staticmethod
-    def get_env_variable(var_name: str, default: str = None) -> str:
-        return Config.get_variable(var_name, default)      
 
     @staticmethod
     def find_open_port(start_port: int = 5000, end_port: int = 6000) -> int:
@@ -213,3 +208,9 @@ class PenpalsHelper:
                 return False
         
         return True
+
+def silence(func):
+    def wrapper(*args, **kwargs):
+        with redirect_stdout(io.StringIO()):
+            return func(*args, **kwargs)
+    return wrapper

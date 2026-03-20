@@ -87,6 +87,29 @@ class Config:
     }
 
     @staticmethod
+    def factory_reset():
+        """
+        Resets all configuration to default values. This is a destructive action and should be used with caution.
+        It will clear all variables from the settings dictionary, Azure Key Vault, and SQLCipher, effectively returning the application to its initial state.
+        """
+        # Clear settings dictionary (except for the whitelists and initial setup key)
+        keys_to_delete = [
+            "safe_get_keys_whitelist",
+            "safe_set_keys_whitelist", 
+            "KEYVAULT_WRITE_BLACKLIST", 
+            "SUGGESTED_SETUP_KEYs", 
+            "REQUIRED_SETUP_KEYs", 
+            "HASHABLE_SETUP_KEYs", 
+            "INITIAL_SETUP_KEY"
+        ]
+        
+        for key_list in keys_to_delete:
+            for key in key_list:
+                if key in Config.settings:
+                    del Config.settings[key]
+        print("Config settings reset to default (whitelists and initial setup key preserved).")
+
+    @staticmethod
     def initial_setup_completed() -> bool:
         """
         Checks if the initial setup is completed by verifying that all 

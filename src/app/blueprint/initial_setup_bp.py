@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request, render_template
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from ..service.local_config_service import LocalConfigService
 from ..config import Config
+from ..service.azure_keyvault_service import AzureKeyVaultService as azkv_service
+from ..service.webex_service import WebexService
 import json
 import bcrypt
 
@@ -55,6 +57,9 @@ def submit_initial_setup():
     print(f"Admin account added: {email}")
 
     # Process the data and perform necessary actions.
+
+    WebexService.refresh_config() # Refresh WebEx config to ensure new values are loaded.
+    azkv_service.refresh_config() # Refresh Azure Key Vault config to ensure new values are loaded.
     return jsonify({"message": "Initial setup completed successfully!"}), 200
 
 @initial_setup_bp.route('/api/initial-setup/reset', methods=['POST'])
@@ -67,6 +72,7 @@ def factory_reset():
     if data.get("initial_setup_key") != Config.settings["INITIAL_SETUP_KEY"]:
         return jsonify({"message": "Invalid initial setup key."}), 400
     LocalConfigService.delete_all()
+    Config.factory_reset()
     return jsonify({"message": "Initial setup has been reset."}), 200
 
 

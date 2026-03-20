@@ -14,7 +14,7 @@ class LocalConfigService:
     @staticmethod
     def initialize_sqlcipher():
         if LocalConfigService.sqlcipher_initialized:
-            print("Sqlcipher already initialized, skipping.")
+            # print("Sqlcipher already initialized, skipping.")
             return
         from ..config import Config
         
@@ -40,7 +40,8 @@ class LocalConfigService:
                 LocalConfigService.set_val(key, value)
                 print(f"Loaded config variable '{key}' into sqlcipher.")
             else:
-                print(f"Config variable '{key}' already exists in sqlcipher, skipping load.")
+                pass
+                # print(f"Config variable '{key}' already exists in sqlcipher, skipping load.")
         print(f"Sqlcipher initialized at {db_path} and config variables loaded.")
         
 

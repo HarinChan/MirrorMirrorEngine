@@ -2,6 +2,11 @@ import os
 from azure.identity import ClientSecretCredential, DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 import re
+import logging
+
+# This silences the specific Azure Identity logger
+logger = logging.getLogger('azure.identity')
+logger.setLevel(logging.ERROR) 
 
 # 1. Provide the Vault URI (you can also store this in an environment variable)
 VAULT_URL = "https://mirrormirrorvault.vault.azure.net/"
@@ -88,12 +93,13 @@ class AzureKeyVaultService:
         credential = AzureKeyVaultService.get_credential()
         if credential is None:
             print("WARNING: Azure Key Vault credentials not set. Cannot update secret.")
+            # print("WARNING: Azure Key Vault credentials not set. Cannot update secret.")
             return
         client = SecretClient(vault_url=VAULT_URL, credential=credential)
 
-        print(f"Updating secret '{name}'...")
+        print(f"Updating keyvault secret '{name}'...")
         
         new_secret = client.set_secret(name, value)
 
-        print(f"Success! Secret '{new_secret.name}' set to new value.")
+        print(f"Success! Keyvault secret '{new_secret.name}' set to new value.")
         print(f"New Version ID: {new_secret.properties.version}")
