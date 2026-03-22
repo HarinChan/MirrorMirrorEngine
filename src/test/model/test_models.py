@@ -15,6 +15,8 @@ from src.app.model.post import Post
 from src.app.model.meeting import Meeting
 from src.app.model.meetinginvitation import MeetingInvitation
 from src.app.model.notification import Notification
+from src.app.model.conversation import Conversation
+from src.app.model.message import Message, MessageRead, MessageReaction
 
 
 @pytest.mark.unit
@@ -428,6 +430,616 @@ class TestNotificationModel:
         notification = create_notification(account, related_id='123')
         
         assert notification.related_id == '123'
+
+
+@pytest.mark.unit
+class TestConversationModel:
+    """Tests for Conversation model."""
+    
+    def test_create_direct_conversation(self, db, create_profile, create_account, create_conversation):
+        """Test basic direct message conversation creation."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1, name='Profile 1')
+        profile2 = create_profile(account2, name='Profile 2')
+        
+        conversation = create_conversation(
+            participants=[profile1, profile2],
+            conversation_type='direct'
+        )
+        
+        assert conversation.id is not None
+        assert conversation.type == 'direct'
+        assert profile1 in conversation.participants
+        assert profile2 in conversation.participants
+        assert len(conversation.participants) == 2
+    
+    def test_create_group_conversation(self, db, create_profile, create_account, create_conversation):
+        """Test group conversation creation with title."""
+        account = create_account()
+        profile1 = create_profile(account, name='Profile 1')
+        profile2 = create_profile(account, name='Profile 2')
+        profile3 = create_profile(account, name='Profile 3')
+        
+        conversation = create_conversation(
+            participants=[profile1, profile2, profile3],
+            conversation_type='group',
+            title='Study Group'
+        )
+        
+        assert conversation.type == 'group'
+        assert conversation.title == 'Study Group'
+        assert len(conversation.participants) == 3
+    
+    def test_conversation_timestamps(self, db, create_profile, create_account, create_conversation):
+        """Test that created_at and updated_at are automatically set."""
+        account = create_account()
+        profile = create_profile(account)
+        
+        conversation = create_conversation(participants=[profile])
+        
+        assert conversation.created_at is not None
+        assert conversation.updated_at is not None
+        assert isinstance(conversation.created_at, datetime)
+        assert isinstance(conversation.updated_at, datetime)
+    
+    def test_conversation_without_title_for_direct(self, db, create_profile, create_account):
+        """Test direct conversation without title field."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        
+        db.session.add(conversation)
+        db.session.commit()
+        
+        assert conversation.title is None
+        assert conversation.type == 'direct'
+    
+    def test_conversation_participants_relationship(self, db, create_profile, create_account):
+        """Test participants many-to-many relationship."""
+        account = create_account()
+        profile1 = create_profile(account, name='Profile 1')
+        profile2 = create_profile(account, name='Profile 2')
+        profile3 = create_profile(account, name='Profile 3')
+        
+        conversation = Conversation()
+        conversation.type = 'group'
+        conversation.title = 'Team Chat'
+        conversation.participants = [profile1, profile2, profile3]
+        
+        db.session.add(conversation)
+        db.session.commit()
+        
+        # Verify all participants are stored
+        retrieved = db.session.get(Conversation, conversation.id)
+        assert len(retrieved.participants) == 3
+        assert profile1 in retrieved.participants
+        assert profile2 in retrieved.participants
+        assert profile3 in retrieved.participants
+    
+    def test_conversation_repr(self, db, create_profile, create_account):
+        """Test __repr__ method."""
+        account = create_account()
+        profile = create_profile(account)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile]
+        
+        db.session.add(conversation)
+        db.session.commit()
+        
+        repr_str = repr(conversation)
+        assert 'Conversation' in repr_str
+        assert 'direct' in repr_str
+
+
+@pytest.mark.unit
+class TestMessageModel:
+    """Tests for Message model."""
+    
+    def test_create_text_message(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test basic text message creation."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(
+            conversation=conversation,
+            sender=profile,
+            content='Hello world',
+            message_type='text'
+        )
+        
+        assert message.id is not None
+        assert message.content == 'Hello world'
+        assert message.conversation_id == conversation.id
+        assert message.sender_profile_id == profile.id
+        assert message.message_type == 'text'
+        assert message.deleted is False
+    
+    def test_create_image_message(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test image message with attachment URL."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(
+            conversation=conversation,
+            sender=profile,
+            content='Check this out',
+            message_type='image',
+            attachment_url='https://example.com/image.jpg'
+        )
+        
+        assert message.message_type == 'image'
+        assert message.attachment_url == 'https://example.com/image.jpg'
+    
+    def test_create_file_message(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test file message type."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(
+            conversation=conversation,
+            sender=profile,
+            content='Shared file',
+            message_type='file',
+            attachment_url='https://example.com/document.pdf'
+        )
+        
+        assert message.message_type == 'file'
+    
+    def test_create_system_message(self, db, create_profile, create_account, create_conversation):
+        """Test system message type."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile.id
+        message.content = 'User joined the conversation'
+        message.message_type = 'system'
+        
+        db.session.add(message)
+        db.session.commit()
+        
+        assert message.message_type == 'system'
+    
+    def test_message_timestamps(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test message creation timestamp."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(conversation=conversation, sender=profile)
+        
+        assert message.created_at is not None
+        assert isinstance(message.created_at, datetime)
+        assert message.edited_at is None
+    
+    def test_message_edit_tracking(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test edited_at timestamp when message is edited."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(conversation=conversation, sender=profile, content='Original')
+        assert message.edited_at is None
+        
+        # Simulate editing
+        message.content = 'Edited content'
+        message.edited_at = datetime.utcnow()
+        db.session.commit()
+        
+        assert message.edited_at is not None
+    
+    def test_message_soft_delete(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test soft delete with deleted flag."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(conversation=conversation, sender=profile)
+        assert message.deleted is False
+        
+        # Soft delete
+        message.deleted = True
+        db.session.commit()
+        
+        assert message.deleted is True
+    
+    def test_message_sender_relationship(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test sender profile relationship."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(conversation=conversation, sender=profile)
+        
+        assert message.sender == profile
+        assert message.sender_profile_id == profile.id
+    
+    def test_message_conversation_relationship(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test message-conversation relationship with cascade delete."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(conversation=conversation, sender=profile)
+        message_id = message.id
+        conversation_id = conversation.id
+        
+        # Delete conversation
+        db.session.delete(conversation)
+        db.session.commit()
+        
+        # Message should be deleted due to cascade
+        assert db.session.get(Message, message_id) is None
+    
+    def test_message_repr(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test __repr__ method."""
+        account = create_account()
+        profile = create_profile(account)
+        conversation = create_conversation(participants=[profile])
+        
+        message = create_message(conversation=conversation, sender=profile)
+        
+        repr_str = repr(message)
+        assert 'Message' in repr_str
+        assert 'Conversation' in repr_str
+
+
+@pytest.mark.unit
+class TestMessageReadModel:
+    """Tests for MessageRead model."""
+    
+    def test_create_message_read(self, db, create_profile, create_account, create_conversation, create_message, create_message_read):
+        """Test message read tracking."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Test message'
+        db.session.add(message)
+        db.session.commit()
+        
+        # Mark as read by second participant
+        message_read = MessageRead()
+        message_read.message_id = message.id
+        message_read.profile_id = profile2.id
+        db.session.add(message_read)
+        db.session.commit()
+        
+        assert message_read.id is not None
+        assert message_read.message_id == message.id
+        assert message_read.profile_id == profile2.id
+    
+    def test_message_read_timestamp(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test read_at timestamp."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Test'
+        db.session.add(message)
+        db.session.commit()
+        
+        message_read = MessageRead()
+        message_read.message_id = message.id
+        message_read.profile_id = profile2.id
+        db.session.add(message_read)
+        db.session.commit()
+        
+        assert message_read.read_at is not None
+        assert isinstance(message_read.read_at, datetime)
+    
+    def test_unique_constraint(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test unique constraint on (message_id, profile_id)."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Test'
+        db.session.add(message)
+        db.session.commit()
+        
+        # Create first read entry
+        read1 = MessageRead()
+        read1.message_id = message.id
+        read1.profile_id = profile2.id
+        db.session.add(read1)
+        db.session.commit()
+        
+        # Attempting to create duplicate should fail
+        with pytest.raises(IntegrityError):
+            read2 = MessageRead()
+            read2.message_id = message.id
+            read2.profile_id = profile2.id
+            db.session.add(read2)
+            db.session.commit()
+    
+    def test_message_read_repr(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test __repr__ method."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Test'
+        db.session.add(message)
+        db.session.commit()
+        
+        message_read = MessageRead()
+        message_read.message_id = message.id
+        message_read.profile_id = profile2.id
+        db.session.add(message_read)
+        db.session.commit()
+        
+        repr_str = repr(message_read)
+        assert 'MessageRead' in repr_str
+
+
+@pytest.mark.unit
+class TestMessageReactionModel:
+    """Tests for MessageReaction model."""
+    
+    def test_create_message_reaction(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test basic emoji reaction creation."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Great idea!'
+        db.session.add(message)
+        db.session.commit()
+        
+        # React with emoji
+        reaction = MessageReaction()
+        reaction.message_id = message.id
+        reaction.profile_id = profile2.id
+        reaction.emoji = '👍'
+        db.session.add(reaction)
+        db.session.commit()
+        
+        assert reaction.id is not None
+        assert reaction.emoji == '👍'
+        assert reaction.message_id == message.id
+        assert reaction.profile_id == profile2.id
+    
+    def test_multiple_emoji_reactions(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test different emoji reactions to same message."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Test'
+        db.session.add(message)
+        db.session.commit()
+        
+        # Add different reactions
+        emojis = ['👍', '❤️', '😂', '🎉']
+        for emoji in emojis:
+            reaction = MessageReaction()
+            reaction.message_id = message.id
+            reaction.profile_id = profile2.id
+            reaction.emoji = emoji
+            db.session.add(reaction)
+        db.session.commit()
+        
+        # All reactions should be stored
+        reactions = db.session.query(MessageReaction).filter_by(
+            message_id=message.id,
+            profile_id=profile2.id
+        ).all()
+        assert len(reactions) == 4
+    
+    def test_reaction_timestamp(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test reaction creation timestamp."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Test'
+        db.session.add(message)
+        db.session.commit()
+        
+        reaction = MessageReaction()
+        reaction.message_id = message.id
+        reaction.profile_id = profile2.id
+        reaction.emoji = '👍'
+        db.session.add(reaction)
+        db.session.commit()
+        
+        assert reaction.created_at is not None
+        assert isinstance(reaction.created_at, datetime)
+    
+    def test_unique_constraint(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test unique constraint on (message_id, profile_id, emoji)."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Test'
+        db.session.add(message)
+        db.session.commit()
+        
+        # Create first reaction
+        reaction1 = MessageReaction()
+        reaction1.message_id = message.id
+        reaction1.profile_id = profile2.id
+        reaction1.emoji = '👍'
+        db.session.add(reaction1)
+        db.session.commit()
+        
+        # Attempting to create duplicate should fail
+        with pytest.raises(IntegrityError):
+            reaction2 = MessageReaction()
+            reaction2.message_id = message.id
+            reaction2.profile_id = profile2.id
+            reaction2.emoji = '👍'
+            db.session.add(reaction2)
+            db.session.commit()
+    
+    def test_allow_same_emoji_by_different_profiles(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test that same emoji can be used by different profiles."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        account3 = create_account(email='user3@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        profile3 = create_profile(account3)
+        
+        conversation = Conversation()
+        conversation.type = 'group'
+        conversation.participants = [profile1, profile2, profile3]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Love this!'
+        db.session.add(message)
+        db.session.commit()
+        
+        # Both profile2 and profile3 react with same emoji
+        reaction1 = MessageReaction()
+        reaction1.message_id = message.id
+        reaction1.profile_id = profile2.id
+        reaction1.emoji = '❤️'
+        db.session.add(reaction1)
+        
+        reaction2 = MessageReaction()
+        reaction2.message_id = message.id
+        reaction2.profile_id = profile3.id
+        reaction2.emoji = '❤️'
+        db.session.add(reaction2)
+        db.session.commit()
+        
+        # Both should exist
+        reactions = db.session.query(MessageReaction).filter_by(
+            message_id=message.id,
+            emoji='❤️'
+        ).all()
+        assert len(reactions) == 2
+    
+    def test_reaction_repr(self, db, create_profile, create_account, create_conversation, create_message):
+        """Test __repr__ method."""
+        account1 = create_account(email='user1@example.com')
+        account2 = create_account(email='user2@example.com')
+        profile1 = create_profile(account1)
+        profile2 = create_profile(account2)
+        
+        conversation = Conversation()
+        conversation.type = 'direct'
+        conversation.participants = [profile1, profile2]
+        db.session.add(conversation)
+        db.session.commit()
+        
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = profile1.id
+        message.content = 'Test'
+        db.session.add(message)
+        db.session.commit()
+        
+        reaction = MessageReaction()
+        reaction.message_id = message.id
+        reaction.profile_id = profile2.id
+        reaction.emoji = '👍'
+        db.session.add(reaction)
+        db.session.commit()
+        
+        repr_str = repr(reaction)
+        assert 'MessageReaction' in repr_str
+        assert '👍' in repr_str
 
 
 @pytest.mark.unit

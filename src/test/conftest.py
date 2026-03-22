@@ -15,6 +15,8 @@ from src.app.model.post import Post
 from src.app.model.relation import Relation
 from src.app.model.meeting import Meeting
 from src.app.model.notification import Notification
+from src.app.model.conversation import Conversation
+from src.app.model.message import Message, MessageRead, MessageReaction
 
 
 @pytest.fixture(scope='function')
@@ -47,6 +49,7 @@ def app():
     from src.app.blueprint.chroma_bp import chroma_bp
     from src.app.blueprint.friends_bp import friends_bp
     from src.app.blueprint.meeting_bp import meeting_bp
+    from src.app.blueprint.messaging_bp import messaging_bp
     from src.app.blueprint.notification_bp import notification_bp
     from src.app.blueprint.posts_bp import post_bp
     from src.app.blueprint.profile_bp import profile_bp
@@ -56,6 +59,7 @@ def app():
     test_app.register_blueprint(chroma_bp)
     test_app.register_blueprint(friends_bp)
     test_app.register_blueprint(meeting_bp)
+    test_app.register_blueprint(messaging_bp)
     test_app.register_blueprint(notification_bp)
     test_app.register_blueprint(post_bp)
     test_app.register_blueprint(profile_bp)
@@ -294,6 +298,86 @@ def create_notification(db):
         return notification
     
     return _create_notification
+
+
+@pytest.fixture
+def create_conversation(db):
+    """
+    Factory fixture to create test conversations.
+    Usage: conversation = create_conversation(participants=[profile1, profile2])
+    """
+    def _create_conversation(participants=None, conversation_type='direct', title=None):
+        conversation = Conversation()
+        conversation.type = conversation_type
+        conversation.title = title
+        
+        if participants:
+            conversation.participants = participants
+        
+        db.session.add(conversation)
+        db.session.commit()
+        return conversation
+    
+    return _create_conversation
+
+
+@pytest.fixture
+def create_message(db):
+    """
+    Factory fixture to create test messages.
+    Usage: message = create_message(conversation=conv, sender=profile, content='Hello')
+    """
+    def _create_message(conversation, sender, content='Test message', message_type='text', attachment_url=None):
+        message = Message()
+        message.conversation_id = conversation.id
+        message.sender_profile_id = sender.id
+        message.content = content
+        message.message_type = message_type
+        message.attachment_url = attachment_url
+        message.deleted = False
+        
+        db.session.add(message)
+        db.session.commit()
+        return message
+    
+    return _create_message
+
+
+@pytest.fixture
+def create_message_read(db):
+    """
+    Factory fixture to mark messages as read.
+    Usage: read = create_message_read(message=msg, profile=profile)
+    """
+    def _create_message_read(message, profile):
+        message_read = MessageRead()
+        message_read.message_id = message.id
+        message_read.profile_id = profile.id
+        
+        db.session.add(message_read)
+        db.session.commit()
+        return message_read
+    
+    return _create_message_read
+
+
+@pytest.fixture
+def create_message_reaction(db):
+    """
+    Factory fixture to create message reactions (emoji).
+    Usage: reaction = create_message_reaction(message=msg, profile=profile, emoji='👍')
+    """
+    def _create_message_reaction(message, profile, emoji='👍'):
+        reaction = MessageReaction()
+        reaction.message_id = message.id
+        reaction.profile_id = profile.id
+        reaction.emoji = emoji
+        
+        db.session.add(reaction)
+        db.session.commit()
+        return reaction
+    
+    return _create_message_reaction
 
 
 @pytest.fixture

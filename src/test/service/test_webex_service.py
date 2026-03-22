@@ -29,9 +29,18 @@ def service(monkeypatch):
 
 
 def test_get_auth_url_returns_empty_when_env_missing(monkeypatch):
-    monkeypatch.delenv("WEBEX_CLIENT_ID", raising=False)
-    monkeypatch.delenv("WEBEX_REDIRECT_URI", raising=False)
-
+    """Test that get_auth_url returns empty string when config is missing."""
+    from src.app.config import Config
+    
+    # Mock Config.get_variable to return empty strings for WebEx config
+    def mock_get_variable(name, default=None, ignore_azure=False, ignore_sqlcipher=False):
+        if name in ["WEBEX_CLIENT_ID", "WEBEX_CLIENT_SECRET", "WEBEX_REDIRECT_URI"]:
+            return default or ""
+        return Config.get_variable.__wrapped__(name, default, ignore_azure, ignore_sqlcipher)
+    
+    monkeypatch.setattr("src.app.config.Config.get_variable", mock_get_variable)
+    
+    # Create new service instance to pick up mocked config
     svc = WebexService()
     assert svc.get_auth_url() == ""
 
