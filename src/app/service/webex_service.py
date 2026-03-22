@@ -2,26 +2,35 @@ import os
 import requests
 from datetime import datetime
 import urllib.parse
+from ..config import Config
 
 class WebexService:
     BASE_URL = "https://webexapis.com/v1"
     
+    client_id =  Config.get_variable('WEBEX_CLIENT_ID',"")
+    client_secret = Config.get_variable('WEBEX_CLIENT_SECRET',"")
+    redirect_uri = Config.get_variable('WEBEX_REDIRECT_URI',"")
+
     def __init__(self):
-        self.client_id = os.environ.get('WEBEX_CLIENT_ID')
-        self.client_secret = os.environ.get('WEBEX_CLIENT_SECRET')
-        self.redirect_uri = os.environ.get('WEBEX_REDIRECT_URI')
-        
+        WebexService.refresh_config()
+    
+    @staticmethod
+    def refresh_config():
+        """Refresh configuration from environment variables or config service"""
+        WebexService.client_id =  Config.get_variable('WEBEX_CLIENT_ID',"")
+        WebexService.client_secret = Config.get_variable('WEBEX_CLIENT_SECRET',"")
+        WebexService.redirect_uri = Config.get_variable('WEBEX_REDIRECT_URI',"")
     def get_auth_url(self):
         """Generate the WebEx OAuth authorization URL"""
-        if not self.client_id or not self.redirect_uri:
+        if not WebexService.client_id or not WebexService.redirect_uri:
             print("WARNING: WebEx OAuth credentials not set")
             # Return dummy URL for dev testing if needed or empty
             return ""
             
         params = {
-            "client_id": self.client_id,
+            "client_id": WebexService.client_id,
             "response_type": "code",
-            "redirect_uri": self.redirect_uri,
+            "redirect_uri": WebexService.redirect_uri,
             "scope": "meeting:schedules_read meeting:schedules_write",
             "state": "random_state_string" # Should generate random state for security
         }
@@ -32,10 +41,10 @@ class WebexService:
         url = f"{self.BASE_URL}/access_token"
         payload = {
             "grant_type": "authorization_code",
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
+            "client_id": WebexService.client_id,
+            "client_secret": WebexService.client_secret,
             "code": code,
-            "redirect_uri": self.redirect_uri
+            "redirect_uri": WebexService.redirect_uri
         }
         
         try:
@@ -51,8 +60,8 @@ class WebexService:
         url = f"{self.BASE_URL}/access_token"
         payload = {
             "grant_type": "refresh_token",
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
+            "client_id": WebexService.client_id,
+            "client_secret": WebexService.client_secret,
             "refresh_token": refresh_token
         }
         

@@ -3,18 +3,20 @@ import re
 import os
 from typing import List, Dict, Optional
 from datetime import datetime, timezone
+from contextlib import redirect_stdout
+import io
 
 
 class PenpalsHelper:
     """Static helper class for PenPals application utilities"""
     
     @staticmethod
-    def get_env_variable(var_name):
-        """Get the environment variable or raise an error."""
-        try:
-            return os.environ[var_name]
-        except KeyError:
-            raise EnvironmentError(f"Missing required environment variable: '{var_name}'")
+    def truncate_centered(text, max_length=72):
+        if len(text) <= max_length:
+            return text
+        to_remove = len(text) - max_length
+        start_index = to_remove // 2
+        return text[start_index : start_index + max_length]
 
     @staticmethod
     def find_open_port(start_port: int = 5000, end_port: int = 6000) -> int:
@@ -206,3 +208,9 @@ class PenpalsHelper:
                 return False
         
         return True
+
+def silence(func):
+    def wrapper(*args, **kwargs):
+        with redirect_stdout(io.StringIO()):
+            return func(*args, **kwargs)
+    return wrapper

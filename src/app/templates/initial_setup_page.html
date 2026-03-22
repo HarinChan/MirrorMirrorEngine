@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MirrorMirror | Initialize Engine</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+
+    <style>
+        :root { --azure-blue: #0078d4; --dark-bg: #1a1a1a; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background-color: var(--dark-bg); border-bottom: 3px solid var(--azure-blue); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .btn-azure { background-color: var(--azure-blue); color: white; font-weight: 600; }
+        .btn-azure:hover { background-color: #005a9e; color: white; }
+        .section-header { border-left: 4px solid var(--azure-blue); padding-left: 12px; margin-bottom: 1.5rem; }
+        .loading-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.8); display: none; align-items: center; 
+            justify-content: center; z-index: 9999; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loading-overlay" id="globalLoader">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-2" role="status"></div>
+            <div class="fw-bold">Initializing Engine...</div>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-dark mb-5 shadow">
+        <div class="container">
+            <span class="navbar-brand d-flex align-items-center">
+                <i class="bi bi-cpu-fill me-2 text-info"></i>
+                <strong>MirrorMirror</strong> Engine
+            </span>
+        </div>
+    </nav>
+
+    <main class="container mb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card p-4 p-md-5">
+                    <h2 class="fw-bold mb-4">Initialize MirrorMirror Engine</h2>
+                    <p class="text-muted">Welcome. Provide the initial credentials and configuration keys to deploy your instance.</p>
+                    
+                    <hr class="my-4">
+
+                    <form id="setupForm">
+                        <div class="section-header">
+                            <h5 class="mb-1">Default Admin Account</h5>
+                            <p class="small text-muted mb-0">These credentials will be used for your first login.</p>
+                        </div>
+                        <div class="row g-3 mb-5">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Admin Email</label>
+                                <input type="email" id="admin_email" class="form-control" placeholder="admin@example.com" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Admin Password</label>
+                                <input type="password" id="admin_password" class="form-control" placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <div class="section-header">
+                            <h5 class="mb-1">Required Engine Settings</h5>
+                            <p class="small text-muted mb-0">Mandatory variables required for system stability.</p>
+                        </div>
+                        <div id="requiredKeysContainer" class="row g-3 mb-5">
+                            </div>
+
+                        <div class="section-header">
+                            <h5 class="mb-1">Optional Configurations</h5>
+                            <p class="small text-muted mb-0">Suggested settings for extended functionality.</p>
+                        </div>
+                        <div id="suggestedKeysContainer" class="row g-3 mb-5">
+                            </div>
+
+                        <div class="bg-light p-4 rounded-3 border">
+                            <label class="form-label fw-bold text-danger"><i class="bi bi-key-fill me-1"></i>Initial Setup Key</label>
+                            <input type="password" id="initial_setup_key" class="form-control mb-3" placeholder="Enter your master setup key" required>
+                            
+                            <button type="submit" class="btn btn-azure w-100 py-3 rounded-pill shadow-sm">
+                                <i class="bi bi-rocket-takeoff-fill me-2"></i>Complete Initialization
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let hashableKeys = [];
+
+        // 1. Fetch metadata and build the form
+        async function loadSetupMeta() {
+            try {
+                const response = await fetch('/api/initial-setup/status');
+                const data = await response.json();
+                
+                if (data.setup_completed) {
+                    window.location.reload(); // Redirect to the completed page
+                    return;
+                }
+
+                hashableKeys = data.hashable_keys || [];
+                
+                renderKeys(data.required_keys, 'requiredKeysContainer', true);
+                renderKeys(data.suggested_keys, 'suggestedKeysContainer', false);
+
+            } catch (err) {
+                alert("Critical Error: Could not connect to the MirrorMirror Engine.");
+            }
+        }
+
+        function renderKeys(keys, containerId, isRequired) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = keys.map(key => {
+                // Skip ADMIN_ACCOUNTS as we handle it via email/password fields
+                if (key === 'ADMIN_ACCOUNTS') return '';
+                
+                const type = hashableKeys.includes(key) ? 'password' : 'text';
+                return `
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">${key}</label>
+                        <input type="${type}" data-key="${key}" class="form-control dynamic-input" 
+                               placeholder="Enter ${key}" ${isRequired ? 'required' : ''}>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 2. Handle Submission
+        document.getElementById('setupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const loader = document.getElementById('globalLoader');
+            loader.style.display = 'flex';
+
+            const payload = {
+                initial_setup_key: document.getElementById('initial_setup_key').value
+            };
+
+            // Collect dynamic keys
+            document.querySelectorAll('.dynamic-input').forEach(input => {
+                payload[input.dataset.key] = input.value;
+            });
+
+            // Handle the Admin Account mapping
+            const email = document.getElementById('admin_email').value;
+            const pass = document.getElementById('admin_password').value;
+
+            // Bcrypt the password before sending (to match your backend add_admin_account logic)
+            const salt = dcodeIO.bcrypt.genSaltSync(10);
+            const hashedPass = dcodeIO.bcrypt.hashSync(pass, salt);
+            
+            // Map to the format the backend expects for ADMIN_ACCOUNTS
+            const adminAccountsObj = {};
+            adminAccountsObj[email] = hashedPass;
+            payload["ADMIN_ACCOUNTS"] = JSON.stringify(adminAccountsObj);
+
+            try {
+                const response = await fetch('/admin/initial-setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    window.location.href = '/admin/initial-setup'; // This will trigger the success view
+                } else {
+                    alert(result.message || "Setup failed.");
+                }
+            } catch (err) {
+                alert("Network error. Please try again.");
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadSetupMeta);
+    </script>
+</body>
+</html>

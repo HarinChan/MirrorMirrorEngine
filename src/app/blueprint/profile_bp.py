@@ -16,7 +16,7 @@ from ..service.chromadb_service import ChromaDBService
 
 profile_bp = Blueprint('profile', __name__)
 
-chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="profile_interests")
+chroma_service = ChromaDBService(collection_name="profile_interests")
 
 
 @profile_bp.route('/api/profiles', methods=['POST'])

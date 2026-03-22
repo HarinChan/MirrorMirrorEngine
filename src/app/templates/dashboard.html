@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MirrorMirror | Admin Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root { --azure-blue: #0078d4; --dark-bg: #1a1a1a; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background-color: var(--dark-bg); border-bottom: 3px solid var(--azure-blue); }
+        .card { border: none; border-radius: 12px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .btn-azure { background-color: var(--azure-blue); color: white; }
+        .btn-azure:hover { background-color: #005a9e; color: white; }
+        #configList { max-height: 400px; overflow-y: auto; }
+        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+                           background: rgba(255,255,255,0.7); display: none; align-items: center; 
+                           justify-content: center; border-radius: 12px; z-index: 10; }
+
+        .border-danger {
+            border-color: #dc3545 !important;
+        }
+
+        /* Makes the card-body flex properly if using it in a grid */
+        .card-body.d-flex {
+            min-height: 180px;
+        }
+
+        /* Subtle hover effect to match your other cards */
+        .card.border-top:hover {
+            transform: translateY(-3px);
+            transition: transform 0.2s ease-in-out;
+        }
+    </style>
+</head>
+
+<body style="display: none;" id="dashboard-body">
+
+<nav class="navbar navbar-dark mb-4 shadow">
+    <div class="container">
+        <span class="navbar-brand d-flex align-items-center">
+            <i class="bi bi-cpu-fill me-2 text-info"></i>
+            <strong>MirrorMirror</strong> Engine
+        </span>
+        <div class="d-flex">
+            <span id="userBadge" class="navbar-text me-3 d-none d-md-inline"></span>
+            <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row g-4">
+
+        <!-- Admin Accounts Card -->
+        <div class="col-12">
+            <div class="card shadow-sm mb-4 position-relative">
+                <div class="loading-overlay" id="adminLoader" style="display:none;">
+                    <div class="spinner-border text-azure" role="status"></div>
+                </div>
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2 text-azure"></i>Admin Accounts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 pb-3 border-bottom">
+                        <h6 class="small fw-bold text-uppercase text-muted mb-3">Add New Admin</h6>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <input type="email" id="adminEmail" class="form-control" placeholder="Email Address">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="password" id="adminPassword" class="form-control" placeholder="Password">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-azure w-100" onclick="addAdminAccount()">Add</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="small fw-bold text-uppercase text-muted mb-2">Existing Admins</h6>
+                    <div id="adminAccountList" class="list-group list-group-flush">
+                        <div class="text-center py-3 text-muted">Loading accounts...</div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+        
+        <div class="col-lg-5">
+            <!-- Update Current Variables Card -->
+            <div class="card shadow-sm mb-4 position-relative" id="updateCard">
+                <div class="loading-overlay" id="formLoader">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Configuration Settings Manager</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Update Configuration Settings.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Key</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                            <input type="text" id="configKey" class="form-control" list="keyWhitelist" placeholder="Search or select a key...">
+                        </div>
+                        <datalist id="keyWhitelist">
+                            </datalist>
+                            
+                        <div class="form-text text-muted" style="font-size: 0.75rem;">
+                            Only keys in the <strong>safe_set_keys_whitelist</strong> can be modified.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Value</label>
+                        <div class="input-group">
+                            <input type="password" id="configValue" class="form-control" placeholder="Enter sensitive value">
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleVisibility()">
+                                <i class="bi bi-eye" id="eyeIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 p-3 border rounded bg-light-subtle">
+                        <div class="form-check form-switch d-flex align-items-center mb-1">
+                            <input class="form-check-input me-3" type="checkbox" id="ignoreAzureToggle" role="switch" style="margin-top: 0;">
+                            <label class="form-check-label small fw-bold" for="ignoreAzureToggle" style="cursor: pointer;">
+                                Skip Key Vault Update
+                            </label>
+                        </div>
+
+                        <div id="blacklistWarning" class="form-text text-warning d-none mb-1 ms-1">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            <span style="font-size: 0.75rem;">This variable is restricted from Keyvault writing.</span>
+                        </div>
+
+                        <div class="form-text text-muted ms-1" style="font-size: 0.75rem; line-height: 1.2;">
+                            If enabled, changes only apply to local configuration.
+                        </div>
+                    </div>
+
+                    <button class="btn btn-azure w-100 py-2" onclick="updateConfig()">
+                        Update Settings
+                    </button>
+                </div>
+            </div>
+            <!-- View Current Variables Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Current Variables</h5>
+                    <button class="btn btn-link btn-sm text-decoration-none" onclick="fetchData()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div class="list-group list-group-flush" id="configList">
+                    <div class="p-4 text-center text-muted">Initialising connection...</div>
+                </div>
+            </div>
+            <!-- Factory Reset Card -->
+            <div class="card shadow-sm mb-4 border-top border-3 border-danger">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">System Recovery</h5>
+                </div>                
+                <div class="card-body p-4 text-center">
+                    <p class="small text-muted mb-3">Wipe all data. Irreversible.</p>
+                    <button class="btn btn-sm btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#resetModal">Factory Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+
+            <!-- Latency Check Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-4"><i class="bi bi-graph-up me-2 text-azure"></i>Engine Latency (ms)</h5>
+                    <canvas id="mainChart" height="150"></canvas>
+                </div>
+            </div>
+            
+            <!-- Health Check Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-heart-pulse me-2 text-danger"></i>System Health</h5>
+                    <span id="overallStatus" class="badge rounded-pill">---</span>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush" id="healthList">
+                        <li class="list-group-item text-center py-4 text-muted small">
+                            Fetching system vitals...
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div> 
+    </div>
+</div>
+
+
+<div class="modal fade" id="resetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Reset</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Enter <strong>Initial Setup Key</strong> to confirm:</p>
+                <input type="password" id="resetSetupKey" class="form-control">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="executeFactoryReset()">Wipe Everything</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const API_BASE = '/api';
+    let chartInstance = null;
+    const getAuthToken = () => localStorage.getItem('access_token');
+
+    // Store the blacklist globally after fetching it in loadConfigStatus
+    let keyvaultBlacklist = [];
+    let isKeyvaultHealthy = false;
+
+    // Add an event listener to the input field
+    // Function to handle the "Skip Key Vault" enforcement logic
+    function checkKeyvaultEnforcement() {
+        const selectedKey = document.getElementById('configKey').value;
+        const azureToggle = document.getElementById('ignoreAzureToggle');
+        const toggleLabel = document.querySelector('label[for="ignoreAzureToggle"]');
+        
+        const isBlacklisted = keyvaultBlacklist.includes(selectedKey);
+        const vaultIsDown = !isKeyvaultHealthy;
+
+        if (isBlacklisted || vaultIsDown) {
+            // 1. Force the toggle to True (Skip)
+            azureToggle.checked = true;
+            
+            // 2. Disable the toggle
+            azureToggle.disabled = true;
+            
+            // 3. Dynamic Visual Feedback
+            let reason = isBlacklisted ? 'Blacklisted' : 'Key Vault Unhealthy';
+            if (isBlacklisted && vaultIsDown) reason = 'Vault Down & Blacklisted';
+            
+            toggleLabel.innerHTML = `Skip Key Vault Update <span class="text-warning small">(${reason} - Enforced)</span>`;
+        } else {
+            // Reset to normal if everything is fine
+            azureToggle.disabled = false;
+            toggleLabel.innerHTML = 'Skip Key Vault Update';
+        }
+    }
+
+    // Attach the listener
+    document.getElementById('configKey').addEventListener('input', checkKeyvaultEnforcement);
+
+    function logout() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('account_id');
+        localStorage.removeItem('additional_claims');
+        window.location.href = '/admin/login';
+    }
+
+    async function checkAdminAuth() {
+        const token = localStorage.getItem('access_token');
+
+        // 1. If no token at all, kick to login
+        if (!token) {
+            window.location.href = '/admin/login';
+            return;
+        }
+
+        try {
+            // 2. Call your Python admin check
+            const response = await fetch('/auth/admin', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // 3. Success! Reveal the dashboard
+                document.getElementById('dashboard-body').style.display = 'block';
+                console.log("Admin verified.");
+            } else {
+                // 4. Forbidden or Expired
+                alert("Access Denied: You do not have admin privileges.");
+                logout();
+            }
+        } catch (err) {
+            console.error("Auth check failed:", err);
+            logout();
+        }
+    }
+
+    async function fetchHealth() {
+        const token = localStorage.getItem('access_token');
+        const healthList = document.getElementById('healthList');
+        const overallStatus = document.getElementById('overallStatus');
+
+        try {
+            const response = await fetch('/api/health', { // Ensure this matches your route
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            const details = data.details;
+
+            // Update the global health flag
+            if (details && details.azure_keyvault_health) {
+                isKeyvaultHealthy = (details.azure_keyvault_health.status === 'healthy');
+            }
+            checkKeyvaultEnforcement();
+
+            // 1. Update Overall Badge
+            overallStatus.innerText = data.status.toUpperCase();
+            overallStatus.className = `badge rounded-pill ${getStatusClass(data.status)}`;
+
+            // 2. Clear and Build List
+            healthList.innerHTML = '';
+            
+            // Loop through all keys except the 'status' key inside details
+            Object.keys(details).forEach(key => {
+                if (key === 'status') return; 
+                if (key === 'required_checks') return;
+                if (key === 'engine_latency_health') return;
+
+                const item = details[key];
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center py-3';
+                
+                // Format name: azure_keyvault_health -> Keyvault
+                const displayName = key.replace('_health', '').replace(/_/g, ' ');
+                
+                li.innerHTML = `
+                    <div>
+                        <div class="fw-bold text-capitalize">${displayName}</div>
+                        <small class="text-muted">${item.message || (item.latency_ms ? item.latency_ms + 'ms' : 'Active')}</small>
+                    </div>
+                    <span class="badge ${getStatusClass(item.status)}">${item.status}</span>
+                `;
+                healthList.appendChild(li);
+            });
+
+        } catch (err) {
+            console.error("Health check failed:", err);
+            healthList.innerHTML = '<li class="list-group-item text-danger text-center">Failed to load health status</li>';
+        }
+    }
+
+    // Helper to map status strings to Bootstrap colors
+    function getStatusClass(status) {
+        switch (status) {
+            case 'healthy': return 'bg-success';
+            case 'degraded': return 'bg-warning text-dark';
+            case 'unhealthy': return 'bg-danger';
+            default: return 'bg-secondary';
+        }
+    }
+
+    checkAdminAuth();
+    fetchHealth();
+
+    async function updateLatencyChart() {
+        const token = localStorage.getItem('access_token'); // Or wherever you store your JWT
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        
+        try {
+            const response = await fetch('/api/latency-history', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 425) {
+                console.warn("No history available yet.");
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Map the data for Chart.js
+            const labels = data.map(entry => new Date(entry.timestamp * 1000).toLocaleTimeString());
+            const values = data.map(entry => entry.latency_ms);
+
+            // Check if chart instance already exists to update it, or create new
+            if (window.myLatencyChart) {
+                window.myLatencyChart.data.labels = labels;
+                window.myLatencyChart.data.datasets[0].data = values;
+                window.myLatencyChart.update();
+            } else {
+                window.myLatencyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Latency (ms)',
+                            data: values,
+                            borderColor: '#007fff', // Azure color
+                            backgroundColor: 'rgba(0, 127, 255, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Failed to fetch latency data:", error);
+        }
+    }
+
+    // Initial call and refresh every 5 seconds
+    updateLatencyChart();
+    setInterval(updateLatencyChart, 5000);
+
+    // 1. Toggle Visibility of the Value Input
+    function toggleVisibility() {
+        const input = document.getElementById('configValue');
+        const icon = document.getElementById('eyeIcon');
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        }
+    }
+
+    // 2. Fetch and Render Current Variables
+    async function fetchData() {
+        const configContainer = document.getElementById('configList');
+        const comboDataList = document.getElementById('keyWhitelist');
+
+        try {
+            const response = await fetch('/api/config', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+            });
+
+            
+            if (!response.ok) throw new Error('Failed to fetch config');
+            
+            const data = await response.json();
+            
+            // 1. Populate the Combo Box (Datalist) from the SET whitelist
+            // 1. Populate the Datalist
+            if (data.safe_set_keys_whitelist) {
+                // Clear existing options
+                comboDataList.innerHTML = ''; 
+                
+                data.safe_set_keys_whitelist.forEach(key => {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    comboDataList.appendChild(option);
+                });
+                console.log("Datalist populated with:", data.safe_set_keys_whitelist);
+            }
+            const variables = data.current_safe_variables || {};
+            const blacklist = data.keyvault_write_blacklist || [];
+            keyvaultBlacklist = data.keyvault_write_blacklist || [];
+
+            configContainer.innerHTML = Object.entries(variables).map(([key, value]) => {
+                // Check if this specific key is in the write blacklist
+                const isBlacklisted = blacklist.includes(key);
+                
+                const badge = isBlacklisted 
+                    ? `<span class="badge rounded-pill bg-secondary-subtle text-secondary border ms-2">
+                        <i class="bi bi-lock-fill me-1"></i>Local Only
+                    </span>` 
+                    : '';
+
+                return `
+                    <div class="list-group-item py-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <code class="fw-bold text-azure" style="font-size: 1.1rem;">${key}${badge}</code>
+                            <button class="btn btn-sm btn-outline-light text-dark" onclick="fillForm('${key}', '${value}')">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                        </div>
+                        <code class="text-muted small">${value}</code>
+                    </div>
+                `;
+            }).join('') || '<div class="text-center py-3">No variables found.</div>';
+
+        } catch (e) {
+            console.error(e);
+            configContainer.innerHTML = `<div class="alert alert-danger">Error loading configuration.</div>`;
+        }
+    }
+        
+    // 3. Update Configuration (POST)
+    async function updateConfig() {
+        const key = document.getElementById('configKey').value.trim();
+        const value = document.getElementById('configValue').value.trim();
+        const ignoreAzure = document.getElementById('ignoreAzureToggle').checked; // Capture toggle state
+        const loader = document.getElementById('formLoader');
+
+        if (!key || !value) {
+            alert("Please provide both a key and a value.");
+            return;
+        }
+
+        loader.style.display = 'flex';
+
+        try {
+            const response = await fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${getAuthToken()}`,
+                    'Content-Type': 'application/json'
+                },
+                // Logic: "ignoreAzure" in Python expects True/False
+                body: JSON.stringify({ 
+                    key: key, 
+                    value: value, 
+                    ignoreAzure: ignoreAzure 
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert("Configuration updated successfully!");
+                // Reset fields
+                document.getElementById('configValue').value = '';
+                document.getElementById('ignoreAzureToggle').checked = false; 
+                fetchData(); 
+            } else {
+                alert(`Update failed: ${result.msg}`);
+            }
+        } catch (error) {
+            console.error("Update Error:", error);
+            alert("Network error occurred while updating configuration.");
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    // Helper to fill form when clicking edit
+    function fillForm(key, value) {
+        document.getElementById('configKey').value = key;
+        document.getElementById('configValue').value = value;
+
+        const keyInput = document.getElementById('configKey');
+        keyInput.value = key;
+        keyInput.dispatchEvent(new Event('input'));
+
+        document.getElementById('updateCard').scrollIntoView({ behavior: 'smooth' });        
+    }
+
+    // Helper: SHA-256 hashing for the password
+    async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // 1. ADD Admin Account
+    async function addAdminAccount() {
+        const email = document.getElementById('adminEmail').value.trim();
+        const rawPassword = document.getElementById('adminPassword').value;
+        const loader = document.getElementById('adminLoader');
+
+        if (!email || !rawPassword) {
+            alert("Please enter both email and password.");
+            return;
+        }
+
+        loader.style.display = 'flex';
+        try {
+            const hashedPassword = await sha256(rawPassword); // Client-side hash
+
+            const response = await fetch('/api/config/admin-accounts', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email, password: hashedPassword })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert("Admin added successfully!");
+                document.getElementById('adminEmail').value = '';
+                document.getElementById('adminPassword').value = '';
+                refreshAdminList(); // Refresh the list
+            } else {
+                alert(`Error: ${result.msg}`);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Failed to add admin.");
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    // 2. REMOVE Admin Account
+    async function removeAdminAccount(email) {
+        if (!confirm(`Are you sure you want to remove ${email}?`)) return;
+
+        try {
+            const response = await fetch('/api/config/admin-accounts', {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email })
+            });
+
+            if (response.ok) {
+                refreshAdminList();
+            } else {
+                const res = await response.json();
+                alert(res.msg);
+            }
+        } catch (e) {
+            alert("Failed to remove account.");
+        }
+    }
+
+    // 3. REFRESH Admin List
+    // This leverages your existing /api/config endpoint 
+    // assuming ADMIN_ACCOUNTS is in the whitelist.
+    async function refreshAdminList() {
+        const listContainer = document.getElementById('adminAccountList');
+        try {
+            const response = await fetch('/api/config/admin-accounts', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            });
+
+            if (!response.ok) throw new Error('Unauthorized or Server Error');
+
+            const data = await response.json();
+            const accounts = data.admin_accounts || [];
+            
+            // Check if we are at the minimum requirement
+            const isOnlyAdmin = accounts.length <= 1;
+
+            listContainer.innerHTML = accounts.map(email => {
+                // Logic for the action button
+                const actionButton = isOnlyAdmin 
+                    ? `<div class="d-flex align-items-center">
+                            <small class="text-muted me-2" style="font-size: 0.7rem;">Cannot delete the only account</small>
+                            <button class="btn btn-sm btn-outline-secondary border-0 opacity-50" disabled>
+                                <i class="bi bi-trash"></i>
+                            </button>
+                    </div>`
+                    : `<button class="btn btn-sm btn-outline-danger border-0" 
+                            onclick="removeAdminAccount('${email}')" 
+                            title="Remove Admin">
+                            <i class="bi bi-trash"></i>
+                    </button>`;
+
+                return `
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span class="text-dark">
+                            <i class="bi bi-shield-check me-2 text-success"></i>${email}
+                        </span>
+                        ${actionButton}
+                    </div>
+                `;
+            }).join('') || '<div class="text-center py-3 text-muted">No additional admins found.</div>';
+
+        } catch (e) {
+            console.error("Admin List Error:", e);
+            listContainer.innerHTML = `<div class="text-danger small">Failed to load admin list.</div>`;
+        }
+    }
+    
+    async function executeFactoryReset() {
+        const setupKey = document.getElementById('resetSetupKey').value;
+        const token = localStorage.getItem('access_token');
+
+        if (!setupKey) {
+            alert("Initial Setup Key is required to perform a reset.");
+            return;
+        }
+
+        // Double confirmation via browser native popup
+        if (!confirm("CRITICAL: Are you absolutely sure? This will wipe the database and log you out.")) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/initial-setup/reset', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ initial_setup_key: setupKey })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Success! Clear local storage and redirect
+                localStorage.clear(); 
+                alert("System reset successful. Redirecting to setup...");
+                window.location.href = '/admin/initial-setup';
+            } else {
+                alert(`Reset Failed: ${result.message || result.msg}`);
+            }
+        } catch (error) {
+            console.error("Reset Error:", error);
+            alert("A network error occurred during the reset process.");
+        }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', refreshAdminList);
+
+    // Initial Load
+    document.addEventListener('DOMContentLoaded', fetchData);
+
+
+    // Initialize on load
+    window.onload = fetchData;
+</script>
+
+</body>
+</html>
