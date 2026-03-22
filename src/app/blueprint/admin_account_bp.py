@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt  
 from ..config import Config
+from .admin_guard import require_admin_dashboard_enabled
 import bcrypt
 import json
 
@@ -13,6 +14,7 @@ Admin accounts are stored in the "ADMIN_ACCOUNTS" config variable as a JSON obje
 """
 
 @admin_account_bp.route('/api/config/admin-accounts', methods=['GET'])
+@require_admin_dashboard_enabled
 @jwt_required()
 def list_admin_accounts():
     claims = get_jwt()
@@ -24,6 +26,7 @@ def list_admin_accounts():
     return jsonify({"admin_accounts": list(admin_accounts.keys())}), 200
 
 @admin_account_bp.route('/api/config/admin-accounts', methods=['POST'])
+@require_admin_dashboard_enabled
 @jwt_required()
 def add_admin_account():
     claims = get_jwt()
@@ -53,6 +56,7 @@ def add_admin_account():
     return jsonify({"msg": "Admin account added successfully"}), 201
 
 @admin_account_bp.route('/api/config/admin-accounts', methods=['DELETE'])
+@require_admin_dashboard_enabled
 @jwt_required()
 def remove_admin_account():
     claims = get_jwt()
