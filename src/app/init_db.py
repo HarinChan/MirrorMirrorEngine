@@ -72,7 +72,7 @@ def init_db():
         classrooms_data = [
                 { "name": "Philipp's class", "location": 'Oldenburg, Germany', "lon": 8.2146, "lat": 53.1435, "interests": ['Computer Science'], "availability": { "Mon": [8, 10, 13, 16], "Tue": [9, 11, 14], "Wed": [8, 12, 15], "Thu": [10, 13, 16], "Fri": [8, 9, 14] } },
                 { "name": "Parn's class", "location": 'Bangkok, Thailand', "lon": 100.5018, "lat": 13.7563, "interests": [], "availability": { "Mon": [9, 12, 15], "Tue": [8, 11, 13], "Wed": [10, 14, 16], "Thu": [8, 12, 15], "Fri": [9, 11, 14] } },
-                { "name": "Ali's class", "location": 'Brussels, Belgium', "lon": 4.3517, "lat": 50.8503, "interests": ['Physics', 'Debate', 'STEM Projects'], "availability": { "Mon": [8, 11, 14], "Tue": [9, 12, 16], "Wed": [8, 10, 13], "Thu": [11, 14, 15], "Fri": [9, 12, 14] } },
+                { "name": "Ali's class", "location": 'Casablanca, Morocco', "lon": -7.5898, "lat": 33.5731, "interests": ['Physics', 'Debate', 'STEM Projects'], "availability": { "Mon": [8, 11, 14], "Tue": [9, 12, 16], "Wed": [8, 10, 13], "Thu": [11, 14, 15], "Fri": [9, 12, 14] } },
                 { "name": "Rhin's class", "location": 'Suwon, South Korea', "lon": 127.0286, "lat": 37.2636, "interests": ['History'], "availability": { "Mon": [14, 16], "Tue": [14, 15], "Wed": [15, 16], "Thu": [14, 16], "Fri": [14, 15] } },
                 { "name": "Harin's class", "location": 'Hong Kong', "lon": 114.1694, "lat": 22.3193, "interests": ['Art'], "availability": { "Mon": [8, 10, 13], "Tue": [9, 11, 15], "Wed": [8, 12, 14], "Thu": [10, 13, 16], "Fri": [9, 12, 15] } },
                 { "name": 'Rio Harbor Classroom', "location": 'Rio de Janeiro, Brazil', "lon": -43.1729, "lat": -22.9068, "interests": ['Portuguese', 'Geography', 'Environmental Science'], "availability": { "Mon": [8, 11, 16], "Tue": [9, 13, 15], "Wed": [10, 12, 14], "Thu": [8, 11, 15], "Fri": [9, 13, 16] } },
@@ -164,7 +164,7 @@ def init_db():
         # Post 3 - Quote
         p3 = Post(
             profile_id=rhin.id,
-            content="This looks amazing! We would love to do a video call and compare project ideas with your class.",
+            content="This looks amazing!",
             quoted_post=p2,
             likes=8,
             comments_count=1,
