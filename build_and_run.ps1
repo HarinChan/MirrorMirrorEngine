@@ -7,7 +7,7 @@ $distRoot = "$projectRoot\build\app.dist"
 $distOpenVinoLibs = "$distRoot\openvino\libs"
 $venvOpenVinoLibs = "$venvRoot\Lib\site-packages\openvino\libs"
 $venvTokenizerLibs = "$venvRoot\Lib\site-packages\openvino_tokenizers\lib"
-$modelDir = "$distRoot\models\qwen3-1.7b-int4-ov"
+$modelDir = "$distRoot\models\DeepSeek-R1-Distill-Qwen-1.5B-int4-cw-ov"
 $appName = "mirrormirror-engine"
 $exePath = "$distRoot\$appName.exe"
 

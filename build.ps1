@@ -11,8 +11,8 @@ $distOpenVinoLibs = Join-Path $distRoot "openvino\libs"
 $venvOpenVinoLibs = Join-Path $venvRoot "Lib\site-packages\openvino\libs"
 $venvTokenizerLibs = Join-Path $venvRoot "Lib\site-packages\openvino_tokenizers\lib"
 
-$modelSource = Join-Path $projectRoot "models\qwen3-1.7b-int4-ov"
-$modelDist = Join-Path $distRoot "models\qwen3-1.7b-int4-ov"
+$modelSource = Join-Path $projectRoot "models\DeepSeek-R1-Distill-Qwen-1.5B-int4-cw-ov"
+$modelDist = Join-Path $distRoot "models\DeepSeek-R1-Distill-Qwen-1.5B-int4-cw-ov"
 $envFile = Join-Path $projectRoot ".env"
 $penpalsDbDir = Join-Path $projectRoot "penpals_db"
 $chromaDbDir = Join-Path $projectRoot "chroma_db"
@@ -59,7 +59,7 @@ if (Test-Path $assetDir) {
 }
 
 if (Test-Path $modelSource) {
-  $nuitkaArgs += "--include-data-dir=$modelSource=models\qwen3-1.7b-int4-ov"
+  $nuitkaArgs += "--include-data-dir=$modelSource=models\DeepSeek-R1-Distill-Qwen-1.5B-int4-cw-ov"
 }
 
 $nuitkaArgs += $entryPoint
