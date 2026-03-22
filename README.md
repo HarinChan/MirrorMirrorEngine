@@ -1,5 +1,21 @@
 # MirrorMirror
 
+## Dashboard Documentation
+
+#### **Setup Engine**
+   
+Access initial-setup page via: `/admin/initial-setup`
+After setting up, log in at `/admin/login`
+When login, dashboard page is available at: `/admin/dashboard`
+
+#### **Dashboard Functions**
+- View Health Checks
+- View Current Configuration Settings.
+- Update Runtime Configuration Settings.
+  - Update Keyvault Values
+- Add or Delete Admin Accounts
+- Factory Reset back to installation status.
+
 ## API Documentation
 
 The MirrorMirror engine provides a RESTful API for managing accounts, profiles/profiles, social features, meetings, WebEx integration, and semantic search. Most endpoints require a JWT token in the `Authorization: Bearer <token>` header.
@@ -60,15 +76,15 @@ Note: `/api/classrooms` also is a supported alias for these routes.
 ### Posts
 
 <!-- markdownlint-disable MD060 -->
-| Endpoint                               | Method   | Description                                                   | Parameters                                                      |
-| :------------------------------------- | :------- | :------------------------------------------------------------ | :-------------------------------------------------------------- |
-| `/api/posts`                           | `GET`    | Get all posts (auth optional)                                | None                                                            |
-| `/api/posts`                           | `POST`   | Create a new post                                             | `content`, `quotedPostId` (optional), `attachments` (optional) |
-| `/api/posts/<id>/like`                 | `POST`   | Like a post                                                   | None                                                            |
-| `/api/posts/<id>/unlike`               | `POST`   | Unlike a post                                                 | None                                                            |
-| `/api/posts/<id>`                      | `DELETE` | Delete a post and related attachment files                    | None                                                            |
-| `/api/posts/attachments/upload`        | `POST`   | Upload attachment for post creation                           | Multipart form-data: `file` or `attachment`                    |
-| `/api/posts/attachments/<storage_key>` | `GET`    | Fetch uploaded attachment by storage key                      | Path parameter: `storage_key`                                  |
+| Endpoint                               | Method   | Description                                | Parameters                                                     |
+| :------------------------------------- | :------- | :----------------------------------------- | :------------------------------------------------------------- |
+| `/api/posts`                           | `GET`    | Get all posts (auth optional)              | None                                                           |
+| `/api/posts`                           | `POST`   | Create a new post                          | `content`, `quotedPostId` (optional), `attachments` (optional) |
+| `/api/posts/<id>/like`                 | `POST`   | Like a post                                | None                                                           |
+| `/api/posts/<id>/unlike`               | `POST`   | Unlike a post                              | None                                                           |
+| `/api/posts/<id>`                      | `DELETE` | Delete a post and related attachment files | None                                                           |
+| `/api/posts/attachments/upload`        | `POST`   | Upload attachment for post creation        | Multipart form-data: `file` or `attachment`                    |
+| `/api/posts/attachments/<storage_key>` | `GET`    | Fetch uploaded attachment by storage key   | Path parameter: `storage_key`                                  |
 <!-- markdownlint-enable MD060 -->
 
 ### WebEx
@@ -98,3 +114,28 @@ Note: `/api/classrooms` also is a supported alias for these routes.
 | `/api/documents/delete` | `DELETE` | Delete documents by ID                   |
 | `/api/documents/info`   | `GET`    | Get collection statistics                |
 | `/api/documents/update` | `PUT`    | Update existing document embeddings      |
+
+### Health Check
+| Endpoint               | Method | Description                                        | Priviledge |
+| :--------------------- | :----- | :------------------------------------------------- | ---------- |
+| `/api/health`          | `GET`  | Returns a health check of all running features.    | `any`      |
+| `/api/latency-history` | `GET`  | Returns engine latency history tracked internally. | `admin`    |
+
+### Admin / Dashboard
+| Endpoint                     | Method   | Description                                       | Priviledge |
+| :--------------------------- | :------- | :------------------------------------------------ | ---------- |
+| `/admin/initial-setup`       | `GET`    | Initial set up page to set up the engine.         | `any`      |
+| `/admin/login`               | `GET`    | Admin login page, redirects to dashboard page.    | `any`      |
+| `/admin/dashboard`           | `GET`    | Dashboard page, requires admin authorization.     | `admin`    |
+| `/auth/admin`                | `GET`    | Authenticates the JWT header belongs to an admin. | `admin`    |
+| `/api/config/admin-accounts` | `GET`    | Get the list of emails for admin accounts         | `admin`    |
+| `/api/config/admin-accounts` | `POST`   | Add an admin account.                             | `admin`    |
+| `/api/config/admin-accounts` | `DELETE` | Delete an admin account.                          | `admin`    |
+
+### Configuration
+| Endpoint                    | Method | Description                                            | Priviledge |
+| :-------------------------- | :----- | :----------------------------------------------------- | ---------- |
+| `/api/config`               | `GET`  | Returns all safe to get configuration variable.        | `admin`    |
+| `/api/config`               | `POST` | Edits a safe to set configuration variable.            | `admin`    |
+| `/api/initial-setup/status` | `GET`  | Get the status of whether the engine has been setup.   | `any`      |
+| `/api/initial-setup/reset`  | `GET`  | Does a factory reset, requires the `initial-setup-key` | `admin`    |

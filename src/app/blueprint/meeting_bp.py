@@ -9,9 +9,10 @@ from ..model import db
 from ..model.account import Account
 from ..model.meeting import Meeting
 from ..model.profile import Profile
+from ..config import Config
 from ..service.meeting_helper import _serialize_meeting, _ensure_meeting_created_with_webex, _get_participant_count, _get_primary_profile, _meeting_has_profile
 
-TRENDING_LOOKAHEAD_DAYS = 14
+TRENDING_LOOKAHEAD_DAYS = Config.get_variable("TRENDING_LOOKAHEAD_DAYS", 14)
 
 meeting_bp = Blueprint('meeting', __name__)
 

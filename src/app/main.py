@@ -4,18 +4,24 @@ Handles authentication, basic profile operations, and ChromaDB document manageme
 Account and classroom management is handled by separate blueprints.
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import timedelta
 from sqlalchemy import desc
 import os
 import bcrypt
+import json
+import time
+import math
 
 from dotenv import load_dotenv
 load_dotenv()
+
+from .service.health_check_service import HealthCheckService
+from .service.azure_keyvault_service import AzureKeyVaultService as azkv_service
 
 from .model import db
 from .model.account import Account
@@ -25,17 +31,21 @@ from .model.relation import Relation
 from .model.recentcall import RecentCall
 
 from .blueprint.account_bp import account_bp
+from .blueprint.admin_account_bp import admin_account_bp
 from .blueprint.chat_bp import chat_bp
-from .blueprint.chroma_bp import chroma_bp
+from .blueprint.chroma_bp import chroma_bp, chroma_service
+from .blueprint.dashboard_bp import dashboard_bp
 from .blueprint.friends_bp import friends_bp
+from .blueprint.initial_setup_bp import initial_setup_bp
 from .blueprint.meeting_bp import meeting_bp
 from .blueprint.messaging_bp import messaging_bp
 from .blueprint.notification_bp import notification_bp
 from .blueprint.posts_bp import post_bp
 from .blueprint.profile_bp import profile_bp
-from .blueprint.webex_bp import webex_bp
+from .blueprint.webex_bp import webex_bp, webex_service
 
 from .helper import PenpalsHelper as helper
+from .config import Config
 
 def print_tables():
     with application.app_context():
@@ -48,20 +58,23 @@ print_tables()
 # Respect reverse-proxy headers (e.g., X-Forwarded-Proto) in deployed environments.
 application.wsgi_app = ProxyFix(application.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
-application.config['SECRET_KEY'] = helper.get_env_variable('FLASK_SECRET_KEY')
-application.config['JWT_SECRET_KEY'] = helper.get_env_variable('JWT_SECRET_KEY')
+application.config['SECRET_KEY'] = Config.get_variable('FLASK_SECRET_KEY',"TEST_FLASK_KEY")
+application.config['JWT_SECRET_KEY'] = Config.get_variable('JWT_SECRET_KEY',"TEST_JWT_KEY")
 application.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-application.config['PREFERRED_URL_SCHEME'] = os.getenv('PREFERRED_URL_SCHEME', 'http')
+application.config['PREFERRED_URL_SCHEME'] = Config.get_variable('PREFERRED_URL_SCHEME', 'http')
 
-db_uri = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///penpals_db/penpals.db')
-if db_uri.startswith('sqlite:///') and not db_uri.startswith('sqlite:////'):
-    rel_path = db_uri.replace('sqlite:///', '', 1)
-    # Ensure the directory exists
-    db_dir = os.path.dirname(rel_path)
-    if db_dir:
-        os.makedirs(db_dir, exist_ok=True)
-    abs_path = os.path.abspath(rel_path)
-    db_uri = f'sqlite:///{abs_path}'
+def refresh_config():
+    application.config['SECRET_KEY'] = Config.get_variable('FLASK_SECRET_KEY',"TEST_FLASK_KEY")
+    application.config['JWT_SECRET_KEY'] = Config.get_variable('JWT_SECRET_KEY',"TEST_JWT_KEY")
+    application.config['PREFERRED_URL_SCHEME'] = Config.get_variable('PREFERRED_URL_SCHEME', 'http')
+
+
+# set SQLALCHEMY_DATABASE_URI relative to appdata folder
+appdata_dir = Config.get_variable("APPDATA_FOLDER", "./appdata")
+db_filename = "penpals_db/penpals.db"
+db_abs_path = os.path.abspath(os.path.join(appdata_dir, db_filename))
+os.makedirs(os.path.dirname(db_abs_path), exist_ok=True)
+db_uri = f'sqlite:///{db_abs_path}'
 application.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -77,17 +90,39 @@ with application.app_context():
     db.create_all()
     print("Database initialized successfully!")
 
+# initialize healtcheck service
+health_check_service = HealthCheckService()
+
 # register blue prints for API endpoints
 application.register_blueprint(account_bp)
+application.register_blueprint(admin_account_bp)
 application.register_blueprint(chat_bp)
 application.register_blueprint(chroma_bp)
+application.register_blueprint(dashboard_bp)
 application.register_blueprint(friends_bp)
+application.register_blueprint(initial_setup_bp)
 application.register_blueprint(meeting_bp)
 application.register_blueprint(messaging_bp)
 application.register_blueprint(notification_bp)
 application.register_blueprint(post_bp)
 application.register_blueprint(profile_bp)
 application.register_blueprint(webex_bp)
+
+# latency tracking
+
+@application.before_request
+async def start_timer():
+    g.start_time = time.perf_counter()
+
+@application.after_request
+async def log_latency(response):
+    if hasattr(g, 'start_time'):
+        # Calculate the delta in milliseconds
+        latency = math.floor((time.perf_counter() - g.start_time) * 1000)
+        request_log = f"[{request.method}] {request.path}"
+        await health_check_service.log_latency(request_log,latency)
+    return response
+
 
 # routes
 
@@ -141,6 +176,21 @@ def login():
     if not email or not password:
         return jsonify({"msg": "Missing email or password"}), 400
     
+    # compare against admin accounts first
+    admin_accounts = json.loads(Config.get_variable("ADMIN_ACCOUNTS", "{}"))
+    if email in admin_accounts:
+        admin_password_hash = admin_accounts[email]
+        if bcrypt.checkpw(password.encode(), admin_password_hash.encode()):
+            claims = {"role": "admin"}
+            access_token = create_access_token(identity=email, additional_claims=claims)
+            account_id = email
+            return jsonify({
+                "access_token": access_token,
+                "account_id": account_id,
+            }), 200
+
+    # then compare against user accounts
+
     account = Account.query.filter_by(email=email).first()
     
     # Password is a client-side SHA-256 hash; bcrypt it and compare
@@ -269,6 +319,91 @@ def get_current_user():
         },
         "classrooms": classrooms
     }), 200
+
+@application.route('/api/health', methods=['GET'])
+def health_check():
+    # requires access to other service, hence in main rather than blueprint
+    health_status = health_check_service.perform_comprehensive_health_check(chroma_service, webex_service, db)
+    status = health_status.get("status", "unhealthy")
+
+    # Use a dictionary to map status to HTTP codes
+    status_codes = {
+        "healthy": 200,
+        "degraded": 200,
+        "unhealthy": 503  # Standard practice is 503 (Service Unavailable)
+    }
+
+    # Get the code, defaulting to 500 if something totally unexpected happens
+    http_code = status_codes.get(status, 500)
+
+    return jsonify({
+        "status": status,
+        "details": health_status
+    }), http_code
+
+
+# admin dashboard routes
+
+@application.route('/api/latency-history', methods=['GET'])
+@jwt_required()
+def get_latency_history():
+    # requires healthcheck service, hence in main
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+    if not health_check_service.latency_history:
+        return jsonify({"msg": "No latency data available, refresh later"}), 422
+    latency_history = health_check_service.latency_history
+    return jsonify(latency_history), 200
+
+@application.route('/auth/admin', methods=['GET'])
+@jwt_required()
+def authenticate_admin():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+    return jsonify({"msg": "Admin authenticated successfully"}), 200
+
+@application.route('/api/config', methods=['GET'])
+@jwt_required()
+def admin_config_status():
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+
+
+    status = {
+        "safe_set_keys_whitelist": Config.settings["safe_set_keys_whitelist"], # list[str]
+        "current_safe_variables": Config.get_all_safe_variables(False,False), # dictionary{str:str}
+        "keyvault_write_blacklist": Config.settings["KEYVAULT_WRITE_BLACKLIST"] # list[str]
+    }
+    return jsonify(status), 200
+
+
+@application.route('/api/config', methods=['POST'])
+@jwt_required()
+def admin_config_update():
+    # requires webex_service and refreshing main config, hence in main
+    claims = get_jwt()
+    if claims.get("role") != "admin":
+        return jsonify({"msg": "Admin access denied"}), 403
+    data = request.json
+    if not data:
+        return jsonify({"msg": "Invalid request format"}), 400
+    key = data.get("key")
+    value = data.get("value")
+    ignore_azure = data.get("ignoreAzure", False)
+    ignore_sqlcipher = data.get("ignoreSqlcipher", False)
+    success = Config.safe_set_variable(key, value, ignore_azure=ignore_azure, ignore_sqlcipher=ignore_sqlcipher)
+    if not success:
+        return jsonify({"msg": f"Failed to update variable '{key}'. It may not be in the safe set whitelist."}), 400
+    
+    # refresh all config
+    refresh_config()
+    WebexService.refresh_config()
+    azkv_service.refresh_config() # reset attempts
+
+    return jsonify({"msg": "Configuration updated successfully"}), 200
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port=5001)
