@@ -31,7 +31,7 @@ def init_db():
         print("Database tables re-created successfully!")
 
         # 1. Create a default account for "Me"
-        me_password = bcrypt.hashpw(client_hash("Metest123!").encode(), bcrypt.gensalt(10)).decode()
+        me_password = bcrypt.hashpw(client_hash("Test1234!").encode(), bcrypt.gensalt(10)).decode()
         me_account = Account(email="me@penpals.com", password_hash=me_password, organization="My School")
         db.session.add(me_account)
         db.session.commit()
@@ -39,13 +39,13 @@ def init_db():
         # Create "My" classroom profile
         me_profile = Profile(
             account_id=me_account.id,
-            name="My Classroom",
+            name="PenPals classroom",
             location="London, UK",
             latitude="51.5074",
             longitude="-0.1278",
             class_size=25,
             availability={"Mon": [9, 10, 11], "Wed": [14, 15]},
-            interests=["Math", "Science"]
+            interests=["Maths", "Science"]
         )
         db.session.add(me_profile)
         db.session.commit()
@@ -54,35 +54,39 @@ def init_db():
         n1 = Notification(
             account_id=me_account.id,
             title="New Friend Request",
-            message="Lee's Classroom sent you a friend request.",
+            message="Philipp's class sent you a friend request.",
             type="info",
             created_at=datetime.utcnow() - timedelta(minutes=30)
         )
         n2 = Notification(
             account_id=me_account.id,
             title="Meeting Reminder",
-            message="Your meeting with Sakura Study Space starts in 1 hour.",
+            message="Your meeting with Harin's class starts in 1 hour.",
             type="warning",
             created_at=datetime.utcnow() - timedelta(hours=1)
         )
         db.session.add_all([n1, n2])
         db.session.commit()
 
-        # 2. Create other Classrooms (from MapView.tsx data)
+        # 2. Create other classrooms
         classrooms_data = [
-          { "name": "Lee's Classroom", "location": 'New York, USA', "lon": -74.0060, "lat": 40.7128, "interests": ['Math', 'Biology', 'Rock Climbing'], "availability": { "Mon": [9, 10, 11, 14, 15], "Tue": [9, 10, 11], "Wed": [14, 15, 16], "Thu": [9, 10, 11], "Fri": [14, 15] } },
-          { "name": 'Math Lover House', "location": 'Los Angeles, USA', "lon": -118.2437, "lat": 34.0522, "interests": ['Math', 'Physics', 'Chess'], "availability": { "Mon": [10, 11, 12, 13], "Tue": [10, 11, 12], "Wed": [15, 16, 17], "Thu": [10, 11], "Fri": [14, 15, 16] } },
-          { "name": 'The Book Nook', "location": 'Bangkok, Thailand', "lon": 100.518, "lat": 13.7563, "interests": ['English', 'History', 'Creative Writing'], "availability": { "Mon": [9, 10, 11], "Tue": [14, 15, 16], "Wed": [9, 10, 11], "Thu": [14, 15, 16], "Fri": [9, 10] } },
-          { "name": "Marie's Language Lab", "location": 'Paris, France', "lon": 2.3522, "lat": 48.8566, "interests": ['French', 'Spanish', 'Mandarin'], "availability": { "Mon": [8, 9, 10], "Tue": [8, 9, 10, 11], "Wed": [14, 15], "Thu": [8, 9, 10], "Fri": [14, 15, 16] } },
-          { "name": 'Sakura Study Space', "location": 'Tokyo, Japan', "lon": 139.6917, "lat": 35.6895, "interests": ['Japanese', 'Anime', 'Calligraphy', 'Math'], "availability": { "Mon": [13, 14, 15], "Tue": [13, 14, 15, 16], "Wed": [13, 14], "Thu": [14, 15, 16], "Fri": [13, 14, 15] } },
-          { "name": 'Outback Learning Hub', "location": 'Sydney, Australia', "lon": 151.2093, "lat": -33.8688, "interests": ['Biology', 'Geography', 'Surfing'], "availability": { "Mon": [7, 8, 9], "Tue": [7, 8, 9, 10], "Wed": [16, 17, 18], "Thu": [7, 8, 9], "Fri": [16, 17, 18] } },
-          { "name": 'TechHub Singapore', "location": 'Singapore', "lon": 103.8198, "lat": 1.3521, "interests": ['Computer Science', 'Robotics', 'Math'], "availability": { "Mon": [10, 11, 12, 13], "Tue": [10, 11, 12], "Wed": [14, 15, 16], "Thu": [10, 11, 12], "Fri": [14, 15] } },
-          { "name": "Priya's Practice Room", "location": 'Mumbai, India', "lon": 72.8777, "lat": 19.0760, "interests": ['Hindi', 'Music', 'Dance', 'Math'], "availability": { "Mon": [15, 16, 17], "Tue": [15, 16, 17], "Wed": [9, 10, 11], "Thu": [15, 16, 17], "Fri": [9, 10, 11] } },
-          { "name": 'Samba Study Circle', "location": 'São Paulo, Brazil', "lon": -46.6333, "lat": -23.5505, "interests": ['Portuguese', 'Music', 'Dance', 'Biology'], "availability": { "Mon": [11, 12, 13], "Tue": [11, 12, 13, 14], "Wed": [16, 17, 18], "Thu": [11, 12, 13], "Fri": [16, 17] } },
-          { "name": 'Alpine Academic Circle', "location": 'Gstaad, Switzerland', "lon": 7.2869, "lat": 46.4722, "interests": ['German', 'Chemistry', 'Physics', 'Hiking'], "availability": { "Mon": [8, 9, 10, 11], "Tue": [14, 15, 16], "Wed": [8, 9, 10], "Thu": [14, 15, 16], "Fri": [8, 9, 10] } },
-          { "name": 'The Knit & Wit', "location": 'Stockholm, Sweden', "lon": 18.0686, "lat": 59.3293, "interests": ['Knitting', 'Crafts', 'Design', 'Swedish'], "availability": { "Mon": [13, 14, 15], "Tue": [9, 10, 11], "Wed": [13, 14, 15], "Thu": [9, 10, 11], "Fri": [13, 14, 15] } },
-          { "name": 'Seoul Study Station', "location": 'Seoul, South Korea', "lon": 126.9780, "lat": 37.5665, "interests": ['Korean', 'K-Pop', 'Art', 'Math'], "availability": { "Mon": [16, 17, 18], "Tue": [10, 11, 12], "Wed": [16, 17, 18], "Thu": [10, 11, 12], "Fri": [16, 17] } },
-        ]
+                { "name": "Philipp's class", "location": 'Oldenburg, Germany', "lon": 8.2146, "lat": 53.1435, "interests": ['Computer Science'], "availability": { "Mon": [8, 10, 13, 16], "Tue": [9, 11, 14], "Wed": [8, 12, 15], "Thu": [10, 13, 16], "Fri": [8, 9, 14] } },
+                { "name": "Parn's class", "location": 'Bangkok, Thailand', "lon": 100.5018, "lat": 13.7563, "interests": [], "availability": { "Mon": [9, 12, 15], "Tue": [8, 11, 13], "Wed": [10, 14, 16], "Thu": [8, 12, 15], "Fri": [9, 11, 14] } },
+                { "name": "Ali's class", "location": 'Brussels, Belgium', "lon": 4.3517, "lat": 50.8503, "interests": ['Physics', 'Debate', 'STEM Projects'], "availability": { "Mon": [8, 11, 14], "Tue": [9, 12, 16], "Wed": [8, 10, 13], "Thu": [11, 14, 15], "Fri": [9, 12, 14] } },
+                { "name": "Rhin's class", "location": 'Suwon, South Korea', "lon": 127.0286, "lat": 37.2636, "interests": ['History'], "availability": { "Mon": [14, 16], "Tue": [14, 15], "Wed": [15, 16], "Thu": [14, 16], "Fri": [14, 15] } },
+                { "name": "Harin's class", "location": 'Hong Kong', "lon": 114.1694, "lat": 22.3193, "interests": ['Art'], "availability": { "Mon": [8, 10, 13], "Tue": [9, 11, 15], "Wed": [8, 12, 14], "Thu": [10, 13, 16], "Fri": [9, 12, 15] } },
+                { "name": 'Rio Harbor Classroom', "location": 'Rio de Janeiro, Brazil', "lon": -43.1729, "lat": -22.9068, "interests": ['Portuguese', 'Geography', 'Environmental Science'], "availability": { "Mon": [8, 11, 16], "Tue": [9, 13, 15], "Wed": [10, 12, 14], "Thu": [8, 11, 15], "Fri": [9, 13, 16] } },
+                { "name": 'Pacific Maple Academy', "location": 'Vancouver, Canada', "lon": -123.1207, "lat": 49.2827, "interests": ['Literature', 'Computer Science', 'Film'], "availability": { "Mon": [9, 12, 15], "Tue": [8, 10, 14], "Wed": [9, 11, 16], "Thu": [8, 13, 15], "Fri": [10, 12, 14] } },
+                { "name": 'Hudson Learning Studio', "location": 'New York, USA', "lon": -74.0060, "lat": 40.7128, "interests": ['Maths', 'Music', 'Creative Writing'], "availability": { "Mon": [8, 10, 14], "Tue": [9, 12, 15], "Wed": [8, 11, 13], "Thu": [10, 12, 16], "Fri": [9, 14, 15] } },
+                { "name": 'Safari Surfers', "location": 'Nairobi, Kenya', "lon": 36.8219, "lat": -1.2921, "interests": ['Biology', 'Civic Studies', 'Poetry'], "availability": { "Mon": [8, 12, 14], "Tue": [9, 11, 15], "Wed": [10, 13, 16], "Thu": [8, 11, 14], "Fri": [9, 12, 15] } },
+                { "name": 'Desert Future School', "location": 'Dubai, UAE', "lon": 55.2708, "lat": 25.2048, "interests": ['Engineering', 'Business', 'Robotics'], "availability": { "Mon": [8, 12, 16], "Tue": [9, 11, 14], "Wed": [10, 13, 15], "Thu": [8, 12, 14], "Fri": [9, 11, 16] } },
+                { "name": 'Yamuna Scholars Circle', "location": 'New Delhi, India', "lon": 77.2090, "lat": 28.6139, "interests": ['History', 'Hindi', 'Astronomy'], "availability": { "Mon": [8, 10, 15], "Tue": [9, 12, 14], "Wed": [8, 11, 16], "Thu": [10, 13, 15], "Fri": [9, 12, 16] } },
+                { "name": 'Marina Innovation Class', "location": 'Singapore', "lon": 103.8198, "lat": 1.3521, "interests": ['Computer Science', 'Maths', 'Robotics'], "availability": { "Mon": [9, 11, 14], "Tue": [8, 10, 15], "Wed": [9, 12, 16], "Thu": [8, 11, 13], "Fri": [10, 12, 15] } },
+                { "name": 'Sakura Study Space', "location": 'Tokyo, Japan', "lon": 139.6917, "lat": 35.6895, "interests": ['Japanese', 'Technology', 'History'], "availability": { "Mon": [8, 11, 13], "Tue": [9, 12, 15], "Wed": [10, 14, 16], "Thu": [8, 11, 15], "Fri": [9, 13, 14] } },
+                { "name": 'Southern Cross Classroom', "location": 'Sydney, Australia', "lon": 151.2093, "lat": -33.8688, "interests": ['Biology', 'Geography', 'Marine Science'], "availability": { "Mon": [8, 10, 14], "Tue": [9, 12, 16], "Wed": [8, 11, 15], "Thu": [10, 13, 14], "Fri": [9, 12, 15] } },
+                { "name": 'Bund Skyline Academy', "location": 'Shanghai, China', "lon": 121.4737, "lat": 31.2304, "interests": ['Mandarin', 'Maths', 'World History'], "availability": { "Mon": [8, 12, 15], "Tue": [9, 11, 14], "Wed": [10, 13, 16], "Thu": [8, 11, 15], "Fri": [9, 12, 14] } },
+                { "name": 'Andalusian Bridge Class', "location": 'Seville, Spain', "lon": -5.9845, "lat": 37.3891, "interests": ['Spanish', 'Art', 'History'], "availability": { "Mon": [9, 12, 14], "Tue": [8, 11, 15], "Wed": [10, 13, 16], "Thu": [8, 12, 14], "Fri": [9, 11, 15] } },
+            ]
 
         created_profiles = []
         for c in classrooms_data:
@@ -112,23 +116,23 @@ def init_db():
         # 3. Create Posts and Calls
         
         # Get reference to some profiles
-        marie = next(p for p in created_profiles if "Marie" in p.name)
-        lee = next(p for p in created_profiles if "Lee" in p.name)
-        sakura = next(p for p in created_profiles if "Sakura" in p.name)
+        philipp = next(p for p in created_profiles if "Philipp" in p.name)
+        rhin = next(p for p in created_profiles if "Rhin" in p.name)
+        harin = next(p for p in created_profiles if "Harin" in p.name)
         
         # Add Recent Calls for Me
         c1 = RecentCall(
             caller_profile_id=me_profile.id,
-            target_classroom_id=str(lee.id),
-            target_classroom_name=lee.name,
+            target_classroom_id=str(philipp.id),
+            target_classroom_name=philipp.name,
             duration_seconds=300,
             timestamp=datetime.utcnow() - timedelta(days=1),
             call_type="outgoing"
         )
         c2 = RecentCall(
             caller_profile_id=me_profile.id,
-            target_classroom_id=str(sakura.id),
-            target_classroom_name=sakura.name,
+            target_classroom_id=str(rhin.id),
+            target_classroom_name=rhin.name,
             duration_seconds=1240,
             timestamp=datetime.utcnow() - timedelta(days=2),
             call_type="incoming"
@@ -139,8 +143,8 @@ def init_db():
         
         # Post 1
         p1 = Post(
-            profile_id=marie.id,
-            content="Hello everyone! We just started our unit on French Impressionism. Would love to connect with an art class to share our student's work! 🎨🇫🇷",
+            profile_id=harin.id,
+            content="Hello everyone! We just started our unit on visual storytelling. Would love to connect with another class to share student artwork.",
             likes=12,
             comments_count=2,
             created_at=datetime.utcnow() - timedelta(hours=2)
@@ -149,8 +153,8 @@ def init_db():
         
         # Post 2
         p2 = Post(
-            profile_id=lee.id,
-            content="Our science fair projects are finally done! The students worked so hard on their volcanoes. 🌋",
+            profile_id=philipp.id,
+            content="Our students just wrapped up an intro coding challenge and built some fun mini games.",
             likes=45,
             comments_count=5,
             created_at=datetime.utcnow() - timedelta(hours=5)
@@ -159,8 +163,8 @@ def init_db():
         
         # Post 3 - Quote
         p3 = Post(
-            profile_id=sakura.id,
-            content="This looks amazing! We would love to do a video call to see them in action. Our students are learning about geology right now.",
+            profile_id=rhin.id,
+            content="This looks amazing! We would love to do a video call and compare project ideas with your class.",
             quoted_post=p2,
             likes=8,
             comments_count=1,
@@ -174,27 +178,27 @@ def init_db():
         # 4. Create Friendships and Requests
         
         # Get reference to some profiles
-        marie = next(p for p in created_profiles if "Marie" in p.name)
-        lee = next(p for p in created_profiles if "Lee" in p.name)
-        sakura = next(p for p in created_profiles if "Sakura" in p.name)
+        philipp = next(p for p in created_profiles if "Philipp" in p.name)
+        rhin = next(p for p in created_profiles if "Rhin" in p.name)
+        harin = next(p for p in created_profiles if "Harin" in p.name)
 
-        # Make Marie a friend of Me (Accepted)
-        rel1 = Relation(from_profile_id=me_profile.id, to_profile_id=marie.id)
-        rel2 = Relation(from_profile_id=marie.id, to_profile_id=me_profile.id)
+        # Make Harin a friend of Me (Accepted)
+        rel1 = Relation(from_profile_id=me_profile.id, to_profile_id=harin.id)
+        rel2 = Relation(from_profile_id=harin.id, to_profile_id=me_profile.id)
         db.session.add_all([rel1, rel2])
         
-        # Make Lee send a request to Me (Pending)
+        # Make Philipp send a request to Me (Pending)
         freq1 = FriendRequest(
-            sender_profile_id=lee.id,
+            sender_profile_id=philipp.id,
             receiver_profile_id=me_profile.id, 
             status='pending'
         )
         db.session.add(freq1)
 
-        # Make Me send a request to Sakura (Pending)
+        # Make Me send a request to Rhin (Pending)
         freq2 = FriendRequest(
             sender_profile_id=me_profile.id,
-            receiver_profile_id=sakura.id,
+            receiver_profile_id=rhin.id,
             status='pending'
         )
         db.session.add(freq2)
