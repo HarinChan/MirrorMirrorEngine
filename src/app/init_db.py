@@ -8,7 +8,6 @@ from .model.account import Account
 from .model.profile import Profile
 from .model.post import Post
 from .model.notification import Notification
-from .model.recentcall import RecentCall
 from .model.friendrequest import FriendRequest
 from .model.relation import Relation
 
@@ -109,32 +108,13 @@ def init_db():
         db.session.commit()
         print(f"Created {len(created_profiles)} classrooms")
 
-        # 3. Create Posts and Calls
+        # 3. Create Posts
         
         # Get reference to some profiles
         marie = next(p for p in created_profiles if "Marie" in p.name)
         lee = next(p for p in created_profiles if "Lee" in p.name)
         sakura = next(p for p in created_profiles if "Sakura" in p.name)
         
-        # Add Recent Calls for Me
-        c1 = RecentCall(
-            caller_profile_id=me_profile.id,
-            target_classroom_id=str(lee.id),
-            target_classroom_name=lee.name,
-            duration_seconds=300,
-            timestamp=datetime.utcnow() - timedelta(days=1),
-            call_type="outgoing"
-        )
-        c2 = RecentCall(
-            caller_profile_id=me_profile.id,
-            target_classroom_id=str(sakura.id),
-            target_classroom_name=sakura.name,
-            duration_seconds=1240,
-            timestamp=datetime.utcnow() - timedelta(days=2),
-            call_type="incoming"
-        )
-        db.session.add_all([c1, c2])
-
         posts = []
         
         # Post 1
@@ -169,7 +149,7 @@ def init_db():
         db.session.add(p3)
         
         db.session.commit()
-        print("Created synthetic posts and calls")
+        print("Created synthetic posts")
 
         # 4. Create Friendships and Requests
         
