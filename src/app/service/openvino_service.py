@@ -3,14 +3,11 @@ import threading
 import queue
 from typing import Any, Dict, Iterable, List
 
-try:
-    import openvino_genai as ov_genai
-except ImportError:
-    ov_genai = None
+import openvino_genai as ov_genai
 
 DEFAULT_MODEL_DIR = os.getenv(
     "OPENVINO_MODEL_DIR",
-    "./models/qwen3-1.7b-int4-ov",
+    ".DeepSeek-R1-Distill-Qwen-1.5B-int4-cw-ov",
 )
 
 MAX_NEW_TOKENS = int(os.getenv("OPENVINO_MAX_NEW_TOKENS", "256"))
