@@ -4,7 +4,7 @@ Posts API endpoints.
 import os
 import uuid
 
-from flask import Blueprint, jsonify, request, current_app, send_from_directory, url_for
+from flask import Blueprint, jsonify, request, current_app, send_file, url_for
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import desc
 from werkzeug.utils import secure_filename
@@ -20,7 +20,7 @@ from ..config import Config
 
 post_bp = Blueprint('post', __name__)
 
-chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="penpals_documents")
+chroma_service = ChromaDBService(collection_name="penpals_documents")
 
 ALLOWED_ATTACHMENT_MIME_TYPES = {
     "image/png",
@@ -35,20 +35,32 @@ MAX_ATTACHMENT_SIZE_BYTES = 20 * 1024 * 1024
 
 
 def _attachments_root_dir():
-    root = os.path.join(current_app.root_path, 'uploads', 'post_attachments')
+    appdata_root = Config.get_variable("APPDATA_FOLDER", "./appdata")
+    root = os.path.join(appdata_root, 'uploads', 'post_attachments')
     os.makedirs(root, exist_ok=True)
     return root
 
 
-def _safe_storage_path(storage_key):
-    if not storage_key or '..' in storage_key or storage_key.startswith('/'):
-        return None
+def _legacy_attachments_root_dir():
+    return os.path.join(current_app.root_path, 'uploads', 'post_attachments')
 
-    root = os.path.abspath(_attachments_root_dir())
-    abs_path = os.path.abspath(os.path.join(root, storage_key))
-    if not abs_path.startswith(root + os.sep):
-        return None
-    return abs_path
+
+def _attachment_candidate_paths(storage_key):
+    if not storage_key or '..' in storage_key or storage_key.startswith('/'):
+        return []
+
+    paths = []
+    for root_path in (_attachments_root_dir(), _legacy_attachments_root_dir()):
+        root = os.path.abspath(root_path)
+        abs_path = os.path.abspath(os.path.join(root, storage_key))
+        if abs_path.startswith(root + os.sep):
+            paths.append(abs_path)
+    return paths
+
+
+def _safe_storage_path(storage_key):
+    candidate_paths = _attachment_candidate_paths(storage_key)
+    return candidate_paths[0] if candidate_paths else None
 
 
 def _uploaded_file_size(file_storage):
@@ -192,11 +204,12 @@ def upload_post_attachment():
 @post_bp.route('/api/posts/attachments/<path:storage_key>', methods=['GET'])
 def get_post_attachment_file(storage_key):
     """Serve uploaded post attachment by storage key."""
-    abs_path = _safe_storage_path(storage_key)
-    if abs_path is None or not os.path.exists(abs_path):
+    candidate_paths = _attachment_candidate_paths(storage_key)
+    abs_path = next((path for path in candidate_paths if os.path.exists(path)), None)
+    if abs_path is None:
         return jsonify({"msg": "Attachment not found"}), 404
 
-    return send_from_directory(_attachments_root_dir(), storage_key, as_attachment=False)
+    return send_file(abs_path, as_attachment=False)
 
 
 @post_bp.route('/api/posts', methods=['GET'])
@@ -413,9 +426,9 @@ def delete_post(post_id):
     # Collect attachment file paths before deleting DB rows.
     attachment_file_paths = []
     for attachment in post.attachments:
-        abs_path = _safe_storage_path(attachment.storage_key)
-        if abs_path:
-            attachment_file_paths.append(abs_path)
+        for abs_path in _attachment_candidate_paths(attachment.storage_key):
+            if os.path.exists(abs_path) and abs_path not in attachment_file_paths:
+                attachment_file_paths.append(abs_path)
 
     db.session.delete(post)
     db.session.commit()

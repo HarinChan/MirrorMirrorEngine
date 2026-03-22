@@ -13,7 +13,7 @@ from ..service.webex_service import WebexService
 
 from ..service.chromadb_service import ChromaDBService
 
-chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="penpals_documents")
+chroma_service = ChromaDBService(collection_name="penpals_documents")
 webex_service = WebexService()
 
 def _get_primary_profile(account: Account):

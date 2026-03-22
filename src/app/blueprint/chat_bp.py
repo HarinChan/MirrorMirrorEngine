@@ -20,7 +20,7 @@ MEETING_WIDGET_NON_INTENT_SIMILARITY_THRESHOLD = 0.35
 
 chat_bp = Blueprint('chat', __name__)
 
-chroma_service = ChromaDBService(persist_directory="./chroma_db", collection_name="penpals_documents")
+chroma_service = ChromaDBService(collection_name="penpals_documents")
 
 def _extract_context_classroom_ids(context_docs, limit: int = 3, user_query: str = ""):
     ids = []
