@@ -6,7 +6,7 @@ MirrorMirror engine is the social networking engine for PenPals AI
 
 ```
 .
-├── .github/                   #github actions and PR template  
+├── .github/                   # GitHub actions and PR template  
 ├── asset/                     #miscellaneous HTML
 ├── models/                    #default language model location
 ├── src/                            
@@ -29,9 +29,9 @@ MirrorMirror engine is the social networking engine for PenPals AI
 
 ## Building from source (.exe)
 ---
-To build the engine from source on Windows follow the instructions below. Please note that you will need a valid `webex_client_id`and `webex_client_secret`. Go to **Retrieving Webex Tokens** for instructions on how to create a Webex integration on the developer portal.
+To build the engine from source on Windows, follow the instructions below. Please note that you will need a valid `webex_client_id` and `webex_client_secret`. Go to **Retrieving Webex Tokens** for instructions on how to create a Webex integration on the developer portal.
 
-Prerequisites: Ensure that you have installed Python (>= 3.12) and pip. We highly recommend running a virtual environment to ensure only required packages are compiled.
+Prerequisites: Ensure that you have installed Python (>= 3.12) and pip. We highly recommend running a virtual environment to ensure only the required packages are compiled.
 ```
 python -m venv .venv
 \.venv\Scripts\activate
@@ -98,14 +98,14 @@ python app.py
 ```
 
 **Port Configuration**
-MirrorMirror will automatically find the next open port between `5000`and `6000`. To make your instance publicly available you will need to forward that port.
+MirrorMirror will automatically find the next open port between `5000`and `6000`. To make your instance publicly available, you will need to forward that port.
 
 ## Retrieving Webex Tokens
 ---
 1. Signup / Log into the Webex developer portal at [Webex for Developers](https://developer.webex.com/)
 2. Click Profile -> My Webex Apps -> Create a new App -> Integration
-3. add the following redirect URIs: `http://localhost:3000`, `https://localhost:3000`
-4. make sure to give the following permissions: `meeting:participants_write`, `meeting:participants_read`, `meeting:schedules_write`, `meeting:schedules_read`
+3. Add the following redirect URIs: `http://localhost:3000`, `https://localhost:3000`
+4. Make sure to give the following permissions: `meeting:participants_write`, `meeting:participants_read`, `meeting:schedules_write`, `meeting:schedules_read`
 5. Copy Client ID and Client Secret
 
 ## Inserting dummy data
@@ -114,7 +114,7 @@ If you wish to start with some example profiles and data run before:
 ```
 python -m src.app.init_db
 ```
-(if you are building from source do this before compilation)
+(If you are building from source, do this before compilation)
 ## Bring your own Model
 ---
 If you wish to use a different language model, add the following line in the `.env`file before building or running MirrorMirror:
@@ -138,12 +138,13 @@ The following are experimental features, which may include some untested functio
 4. Create a azure webapp: `your_webapp_name`.
 5. Go to your Azure Portal, search and select `Microsoft Entra ID`, then note down `your_tenant_id`
 6. Go to your Azure Portal, create a new `App Registration`
+
    7. Search for and select `App Registration`
    8. Create a new Registration named `your_registration`(unused value for deployment)
    9. Note down the `Application (client) ID` as `your_client_id`
    10. Select Certificates & secrets.
-   11. Select Client secrets, and then Select New client secret.
-   12. Provide a description of the secret, and a duration.
+   11. Select Client secrets, and then select New client secret.
+   12. Provide a description of the secret and a duration.
    13. Select Add.
    14. Note down the value of the secret as `your_client_secret` 
 15. Set your WebApp's environmental variables:
@@ -159,9 +160,9 @@ The following are experimental features, which may include some untested functio
  | `AZURE_CLIENT_ID`             | `your_client_id`           |
  | `AZURE_CLIENT_SECRET`         | `your_client_secret`       |
  | `AZURE_TENANT_ID`             | `your_tenant_id`           |
- | `WEBEX_CLIENT_ID`             | `NOTDONE`                  |
- | `WEBEX_ACCESS_TOKEN`          | `NOTDONE`                  |
- | `WEBEX_CLIENT_SECRET`         | `NOTDONE`                  |
+ | `WEBEX_CLIENT_ID`             | `your_webex_client_id`     |
+ | `WEBEX_ACCESS_TOKEN`          | `your_webex_access_token`  |
+ | `WEBEX_CLIENT_SECRET`         | `your_webex_client_secret` |
  | `WEBEX_REDIRECT_URI`          | `"https://localhost:3000"` |
 
  `*x`: your own set secret key value.
@@ -183,21 +184,21 @@ b. define the following `Repository Secrets`:
    
 | Key                    | Value                |
 | :--------------------- | :------------------- |
-| `FLASK_SECRET_KEY`     | `*a`                 |
-| `JWT_SECRET_KEY`       | `*b`                 |
-| `WEBAPP_CLIENT_SECRET` | `your_client_secret` |
-| `WEBEX_CLIENT_ID`      | `NOTDONE`            |
-| `WEBEX_ACCESS_TOKEN`   | `NOTDONE`            |
-| `WEBEX_CLIENT_SECRET`  | `NOTDONE`            |
+| `FLASK_SECRET_KEY`     | `*a`                       |
+| `JWT_SECRET_KEY`       | `*b`                       |
+| `WEBAPP_CLIENT_SECRET` | `your_client_secret`       |
+| `WEBEX_CLIENT_ID`      | `your_webex_client_id`     |
+| `WEBEX_ACCESS_TOKEN`   | `your_webex_access_token`  |
+| `WEBEX_CLIENT_SECRET`  | `your_webex_client_secret` |
 
 `*x`: your own set secret key value.
 
 1. Deploy your application by calling `Deploy Webapp` action via
    2. Arbitrary Pull Request
-   3. Manually on Github Webview under `Actions` Tab
+   3. Manually on GitHub Webview under `Actions` Tab
 
 ### Admin Dashboard
-To enable the Admin Dashboard add this to `.env`:
+To enable the Admin Dashboard, add this to `.env`:
 ```
 ADMIN_DASHBOARD_ENABLED=true
 ```
