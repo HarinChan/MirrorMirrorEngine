@@ -61,7 +61,7 @@ WEBEX_REDIRECT_URI = 'http://localhost:3000'
 
 4. Run the compile script
 ```
-\build-with-openvino.ps1
+\build_with_openvino.ps1
 ```
 Note: This step may take several hours, especially when running for the first time and on low-end hardware, since the whole OpenVino GenAI package will be compiled. 
 
