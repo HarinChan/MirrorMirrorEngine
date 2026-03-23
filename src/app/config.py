@@ -109,13 +109,17 @@ class Config:
             "SUGGESTED_SETUP_KEYs", 
             "REQUIRED_SETUP_KEYs", 
             "HASHABLE_SETUP_KEYs", 
-            "INITIAL_SETUP_KEY"
+            "INITIAL_SETUP_KEY",
         ]
         
-        for key_list in keys_to_delete:
+        for key_list_name in keys_to_delete:
+            key_list = Config.settings.get(key_list_name, [])
             for key in key_list:
                 if key in Config.settings:
                     del Config.settings[key]
+        if "ADMIN_ACCOUNTS" in Config.settings:
+            del Config.settings["ADMIN_ACCOUNTS"]
+        
         print("Config settings reset to default (whitelists and initial setup key preserved).")
 
     @staticmethod
