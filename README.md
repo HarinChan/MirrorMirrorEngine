@@ -141,6 +141,17 @@ ADMIN_DASHBOARD_ENABLED = 'false'
 python app.py
 ```
 
+**Initial Setup**
+In either case, in your browser go to `localhost:5000/admin/login` and complete the initial setup.
+
+1. Create an admin login
+2. Provide an SQLCipher Key, this is the encryption key for the databases.
+3. (optional) Provide Webex API tokens here. We still recommend adding them to the `.env` file for permanent solutions.
+4. (optional) Provide Azure Keyvault Tokens. This can be ignored unless you are deploying on Azure.
+5. Use the initial setup key `MirrorMirrorSetUpKey`
+
+After succesful setup, you can now login at `localhost:5000/admin/login` with your admin account to inspect the current engine status.
+
 **Port Configuration**
 MirrorMirror will automatically find the next open port between `5000`and `6000`. To make your instance publicly available, you will need to forward that port.
 
