@@ -8,6 +8,8 @@ $distOpenVinoLibs = "$distRoot\openvino\libs"
 $venvOpenVinoLibs = "$venvRoot\Lib\site-packages\openvino\libs"
 $venvTokenizerLibs = "$venvRoot\Lib\site-packages\openvino_tokenizers\lib"
 $modelDir = "$distRoot\models\DeepSeek-R1-Distill-Qwen-1.5B-int4-cw-ov"
+$templateSourceDir = "$projectRoot\src\app\templates"
+$templateDistDir = "$distRoot\src\app\templates"
 $appName = "mirrormirror-engine"
 $exePath = "$distRoot\$appName.exe"
 
@@ -47,6 +49,16 @@ Copy-Item "$venvTokenizerLibs\icuuc70.dll" "$distRoot\" -Force
 Write-Host "[6/6] Removing accidental copy-suffixed DLL duplicates..."
 Remove-Item "$distRoot\* copy.dll" -ErrorAction SilentlyContinue
 
+Write-Host "Copying HTML templates to dist..."
+if (Test-Path $templateSourceDir) {
+    New-Item -ItemType Directory -Path $templateDistDir -Force | Out-Null
+    Copy-Item "$templateSourceDir\*.html" "$templateDistDir\" -Force
+}
+else {
+    Write-Host "ERROR: Template source directory not found: $templateSourceDir" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "Validating critical files..."
 $criticalPaths = @(
     "$distOpenVinoLibs\openvino_intel_cpu_plugin.dll",
@@ -55,6 +67,10 @@ $criticalPaths = @(
     "$distRoot\openvino_tokenizers.dll",
     "$distRoot\icudt70.dll",
     "$distRoot\icuuc70.dll",
+    "$templateDistDir\admin_login.html",
+    "$templateDistDir\dashboard.html",
+    "$templateDistDir\initial_setup_page.html",
+    "$templateDistDir\initial_setup_completed.html",
     $modelDir,
     $exePath
 )

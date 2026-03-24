@@ -79,7 +79,7 @@ If you wish to include demo accounts follow **Inserting dummy data**
 ```
 WEBEX_CLIENT_ID = 'your_webex_client_id'
 WEBEX_CLIENT_SECRET = 'your_webex_client_secret'
-WEBEX_REDIRECT_URI = 'http://localhost:3000'
+WEBEX_REDIRECT_URI = 'https://tauri.localhost'
 ```
 
 `ADMIN_DASHBOARD_ENABLED` is enabled by default. To disable admin dashboard routes explicitly, add:
@@ -126,7 +126,7 @@ pip install -r requirements
 ```
 WEBEX_CLIENT_ID = 'your_webex_client_id'
 WEBEX_CLIENT_SECRET = 'your_webex_client_secret'
-WEBEX_REDIRECT_URI = 'http://localhost:3000'
+WEBEX_REDIRECT_URI = 'https://tauri.localhost'
 ```
 
 `ADMIN_DASHBOARD_ENABLED` is enabled by default. To disable admin dashboard routes explicitly, add:
@@ -159,7 +159,7 @@ MirrorMirror will automatically find the next open port between `5000`and `6000`
 
 1. Signup / Log into the Webex developer portal at [Webex for Developers](https://developer.webex.com/)
 2. Click Profile -> My Webex Apps -> Create a new App -> Integration
-3. Add the following redirect URIs: `http://localhost:3000`, `https://localhost:3000`
+3. Add the following redirect URIs: `http://localhost:3000`, `https://localhost:3000`, `https://tauri.localhost`
 4. Make sure to give the following permissions: `meeting:participants_write`, `meeting:participants_read`, `meeting:schedules_write`, `meeting:schedules_read`
 5. Copy Client ID and Client Secret
 
