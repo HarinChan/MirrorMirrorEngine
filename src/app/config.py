@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import secrets
 from dotenv import load_dotenv
 from .service.azure_keyvault_service import AzureKeyVaultService as azkv_service
 from .service.local_config_service import LocalConfigService
@@ -30,7 +31,9 @@ class Config:
             "TRENDING_LOOKAHEAD_DAYS",
             "MEETING_MIN_DURATION_MINUTES",
             "MEETING_MAX_DURATION_MINUTES",
-            "MEETING_MAX_ADVANCE_DAY"
+            "MEETING_MAX_ADVANCE_DAY",
+            
+            "ADMIN_DASHBOARD_ENABLED"
         ],
         "safe_set_keys_whitelist": [  # must not include itself
             "JWT_SECRET_KEY",
@@ -50,12 +53,15 @@ class Config:
             "TRENDING_LOOKAHEAD_DAYS",
             "MEETING_MIN_DURATION_MINUTES",
             "MEETING_MAX_DURATION_MINUTES",
-            "MEETING_MAX_ADVANCE_DAY"
+            "MEETING_MAX_ADVANCE_DAY",
+            
+            "ADMIN_DASHBOARD_ENABLED"
         ],
         "KEYVAULT_WRITE_BLACKLIST": [
             "SQLCIPHER_KEY",  # This is a critical secret that should not be stored
-            "JWT_SECRET_KEY",
-            "FLASK_SECRET_KEY",
+            "JWT_SECRET_KEY",  # Auto-generated and stored locally only
+            "FLASK_SECRET_KEY",  # Auto-generated and stored locally only
+            "ADMIN_DASHBOARD_ENABLED",  # Security setting: only from .env, must not persist
             # key values for keyvault identity.
             "KEYVAULT_CLIENT_ID",
             "KEYVAULT_CLIENT_SECRET",
@@ -73,18 +79,21 @@ class Config:
             "KEYVAULT_TENANT_ID",
         ],
         "REQUIRED_SETUP_KEYs": [
-            "JWT_SECRET_KEY",
-            "FLASK_SECRET_KEY",
             "SQLCIPHER_KEY",
         ],
         "HASHABLE_SETUP_KEYs": [
-            "JWT_SECRET_KEY",
-            "FLASK_SECRET_KEY",
             "SQLCIPHER_KEY",
         ],
         "INITIAL_SETUP_KEY": "MirrorMirrorSetUpKey",
         "APPDATA_FOLDER": os.path.join((os.getenv("LOCALAPPDATA") or os.getenv("APPDATA") or os.path.expanduser("~/.config")), "MirrorMirrorEngine")
     }
+
+    @staticmethod
+    def _generate_secret(length: int = 32) -> str:
+        """
+        Generate a cryptographically secure random secret.
+        """
+        return secrets.token_urlsafe(length)
 
     @staticmethod
     def factory_reset():
@@ -100,13 +109,17 @@ class Config:
             "SUGGESTED_SETUP_KEYs", 
             "REQUIRED_SETUP_KEYs", 
             "HASHABLE_SETUP_KEYs", 
-            "INITIAL_SETUP_KEY"
+            "INITIAL_SETUP_KEY",
         ]
         
-        for key_list in keys_to_delete:
+        for key_list_name in keys_to_delete:
+            key_list = Config.settings.get(key_list_name, [])
             for key in key_list:
                 if key in Config.settings:
                     del Config.settings[key]
+        if "ADMIN_ACCOUNTS" in Config.settings:
+            del Config.settings["ADMIN_ACCOUNTS"]
+        
         print("Config settings reset to default (whitelists and initial setup key preserved).")
 
     @staticmethod
@@ -211,6 +224,7 @@ class Config:
             2. SQLCipher encrypted database
             3. Config.py `settings` dictionary
             4. Azure Key Vault (if not ignored and credentials are set)
+            5. Auto-generate for JWT_SECRET_KEY and FLASK_SECRET_KEY if not found
             Returns the default value if the variable is not found in any source and default is provided.
             Raises an error if the variable is required but not found and no default is provided
         """
@@ -229,6 +243,13 @@ class Config:
                 variable = azkv_service.get_secret(name, None)
                 if variable:
                     return variable
+        
+        # Auto-generate secret keys if not found
+        if name in ["JWT_SECRET_KEY", "FLASK_SECRET_KEY"]:
+            generated_secret = Config._generate_secret()
+            Config.set_variable(name, generated_secret, ignore_azure=True, ignore_sqlcipher=False)
+            return generated_secret
+        
         if default is not None:
             return default
         raise EnvironmentError(f"Missing required environment variable: '{name}'")

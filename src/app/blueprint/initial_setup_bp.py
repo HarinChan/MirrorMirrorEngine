@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, render_template
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from ..service.local_config_service import LocalConfigService
 from ..config import Config
+from .admin_guard import require_admin_dashboard_enabled
 from ..service.azure_keyvault_service import AzureKeyVaultService as azkv_service
 from ..service.webex_service import WebexService
 import json
@@ -10,12 +11,14 @@ import bcrypt
 initial_setup_bp = Blueprint('initial_setup', __name__)
 
 @initial_setup_bp.route('/admin/initial-setup', methods=['GET'])
+@require_admin_dashboard_enabled
 def initial_setup_page():
     if Config.initial_setup_completed():
         return render_template('initial_setup_completed.html')
     return render_template('initial_setup_page.html')
 
 @initial_setup_bp.route('/admin/initial-setup', methods=['POST'])
+@require_admin_dashboard_enabled
 def submit_initial_setup():
     # Handle the submission of the initial setup form.
     data = request.get_json()
@@ -63,6 +66,7 @@ def submit_initial_setup():
     return jsonify({"message": "Initial setup completed successfully!"}), 200
 
 @initial_setup_bp.route('/api/initial-setup/reset', methods=['POST'])
+@require_admin_dashboard_enabled
 @jwt_required()
 def factory_reset():
     claims = get_jwt()

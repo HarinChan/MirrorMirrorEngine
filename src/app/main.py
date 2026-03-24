@@ -9,7 +9,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
-from datetime import timedelta
+from datetime import timedelta, datetime
 from sqlalchemy import desc
 import os
 import bcrypt
@@ -25,10 +25,10 @@ from .service.azure_keyvault_service import AzureKeyVaultService as azkv_service
 
 from .model import db
 from .model.account import Account
+from .model.meeting import Meeting
 from .model.notification import Notification
 from .model.profile import Profile
 from .model.relation import Relation
-from .model.recentcall import RecentCall
 
 from .blueprint.account_bp import account_bp
 from .blueprint.admin_account_bp import admin_account_bp
@@ -43,6 +43,7 @@ from .blueprint.notification_bp import notification_bp
 from .blueprint.posts_bp import post_bp
 from .blueprint.profile_bp import profile_bp
 from .blueprint.webex_bp import webex_bp, webex_service
+from .blueprint.admin_guard import require_admin_dashboard_enabled
 
 from .helper import PenpalsHelper as helper
 from .config import Config
@@ -231,6 +232,8 @@ def get_current_user():
             "timestamp": notif.created_at.isoformat()
         })
 
+    all_recent_calls = []
+
     for classroom in account.profiles:
         # Fetch friends (relations)
         # We look for accepted relations where this classroom is either sender or receiver
@@ -279,18 +282,55 @@ def get_current_user():
                     "sentDate": req.created_at.isoformat()
                 })
 
-        # Recent Calls
+        # Recent calls are derived from scheduled meeting data (single source of truth).
         recent_calls = []
-        # Calls made by this classroom
-        for call in classroom.call_history:
+
+        meetings = Meeting.query.filter(
+            (Meeting.creator_id == classroom.id) | (Meeting.participants.any(Profile.id == classroom.id)),
+            Meeting.status == 'active',
+            Meeting.end_time <= datetime.utcnow()
+        ).order_by(desc(Meeting.start_time)).all()
+
+        for meeting in meetings:
+            duration_seconds = max(int((meeting.end_time - meeting.start_time).total_seconds()), 0)
+            is_creator = meeting.creator_id == classroom.id
+
+            other_profiles = []
+            if meeting.creator and meeting.creator.id != classroom.id:
+                other_profiles.append(meeting.creator)
+            for participant in meeting.participants:
+                if participant.id != classroom.id:
+                    other_profiles.append(participant)
+
+            seen_profile_ids = set()
+            unique_other_profiles = []
+            for profile in other_profiles:
+                if profile.id in seen_profile_ids:
+                    continue
+                seen_profile_ids.add(profile.id)
+                unique_other_profiles.append(profile)
+
+            if len(unique_other_profiles) == 1:
+                target_profile = unique_other_profiles[0]
+                target_id = str(target_profile.id)
+                target_name = target_profile.name
+            elif len(unique_other_profiles) > 1:
+                target_id = None
+                target_name = f"Group meeting: {meeting.title}"
+            else:
+                target_id = None
+                target_name = meeting.title
+
             recent_calls.append({
-                "id": str(call.id),
-                "classroomId": call.target_classroom_id,
-                "classroomName": call.target_classroom_name,
-                "timestamp": call.timestamp.isoformat(),
-                "duration": call.duration_seconds,
-                "type": call.call_type
+                "id": f"meeting-{meeting.id}",
+                "classroomId": target_id,
+                "classroomName": target_name,
+                "timestamp": meeting.start_time.isoformat(),
+                "duration": duration_seconds,
+                "type": "outgoing" if is_creator else "incoming"
             })
+
+        all_recent_calls.extend(recent_calls)
 
         classrooms.append({
             "id": classroom.id,
@@ -308,6 +348,17 @@ def get_current_user():
             "recent_calls": recent_calls
         })
     
+    deduped_recent_calls = []
+    seen_recent_call_ids = set()
+    for recent_call in all_recent_calls:
+        call_id = recent_call.get("id")
+        if call_id in seen_recent_call_ids:
+            continue
+        seen_recent_call_ids.add(call_id)
+        deduped_recent_calls.append(recent_call)
+
+    deduped_recent_calls.sort(key=lambda call: call.get("timestamp") or "", reverse=True)
+
     return jsonify({
         "account": {
             "id": account.id,
@@ -315,7 +366,7 @@ def get_current_user():
             "organization": account.organization,
             "notifications": notifications,
             "friends": classrooms[0]["friends"] if classrooms else [], # flatten for convenience if needed by frontend
-            "recentCalls": classrooms[0]["recent_calls"] if classrooms else [] # flatten
+            "recentCalls": deduped_recent_calls
         },
         "classrooms": classrooms
     }), 200
@@ -345,6 +396,7 @@ def health_check():
 # admin dashboard routes
 
 @application.route('/api/latency-history', methods=['GET'])
+@require_admin_dashboard_enabled
 @jwt_required()
 def get_latency_history():
     # requires healthcheck service, hence in main
@@ -357,6 +409,7 @@ def get_latency_history():
     return jsonify(latency_history), 200
 
 @application.route('/auth/admin', methods=['GET'])
+@require_admin_dashboard_enabled
 @jwt_required()
 def authenticate_admin():
     claims = get_jwt()
@@ -365,6 +418,7 @@ def authenticate_admin():
     return jsonify({"msg": "Admin authenticated successfully"}), 200
 
 @application.route('/api/config', methods=['GET'])
+@require_admin_dashboard_enabled
 @jwt_required()
 def admin_config_status():
     claims = get_jwt()
