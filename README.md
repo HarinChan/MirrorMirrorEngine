@@ -183,7 +183,7 @@ If using an absolute path, there is no further action needed. If using a relativ
 
 ## Notes on NPU usage
 
-If you wish to use an Intel NPU, make sure your model is compatible. A list of pre-compiled supported models can be found here:
+If you wish to use an Intel NPU, make sure your model is compatible. A list of pre-compiled supported models can be found here: [https://huggingface.co/collections/OpenVINO/llms-optimized-for-npu](https://huggingface.co/collections/OpenVINO/llms-optimized-for-npu).
 We recommended running from Python directly for maximum compatibility in this case.
 
 ## Experimental Features
